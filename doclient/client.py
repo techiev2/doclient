@@ -8,7 +8,7 @@ from ast import literal_eval
 
 import requests
 
-from .droplet import Droplet, Kernel, Snapshot
+from .droplet import Droplet, Kernel, Snapshot, Image, DropletSize
 from .errors import APIAuthError, InvalidArgumentError
 from .user import DOUser
 
@@ -22,6 +22,14 @@ class DOClient(object):
     droplet_url = "".join([
         "https://api.digitalocean.com/v2/",
         "droplets?page=1&per_page=100"
+    ])
+    images_url = "".join([
+        "https://api.digitalocean.com/v2/",
+        "images?page=1&per_page=100"
+    ])
+    sizes_url = "".join([
+        "https://api.digitalocean.com/v2/",
+        "sizes?page=1&per_page=100"
     ])
 
     power_onoff_url = "".join([
@@ -99,6 +107,36 @@ class DOClient(object):
             "Content-Type": "application/json",
             "Authorization": "Bearer %s" % self.token
         }
+
+    def get_images(self):
+        """
+        Get list of images available.
+        :raises: APIAuthError
+        """
+        response = requests.get(url=self.images_url,
+                                headers=self.request_headers)
+
+        if response.status_code != 200:
+            raise APIAuthError(
+                "Unable to fetch data from DigitalOcean API.")
+
+        images = response.json().get("images")
+        return [Image(**image) for image in images]
+
+    def get_sizes(self):
+        """
+        Get list of image sizes available.
+        :raises: APIAuthError
+        """
+        response = requests.get(url=self.sizes_url,
+                                headers=self.request_headers)
+
+        if response.status_code != 200:
+            raise APIAuthError(
+                "Unable to fetch data from DigitalOcean API.")
+
+        sizes = response.json().get("sizes")
+        return [DropletSize(**size) for size in sizes]
 
     def get_droplets(self):
         """
