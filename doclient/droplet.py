@@ -89,3 +89,16 @@ class Snapshot(BaseObject):
     def __str__(self):
         return "Snapshot %s [%s] of droplet %s. Running %s" % \
             (self.id, self.name, self.droplet, self.distribution)
+
+
+class Image(BaseObject):
+
+    min_disk_size, slug, name, _id, regions = (None,) * 5
+
+    def __repr__(self):
+        return "Image %s [%s]" % (self.id, self.name)
+
+    def __str__(self):
+        return "Image %s [%s]" % (self.id, self.name)
+
+
