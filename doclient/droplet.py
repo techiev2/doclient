@@ -3,6 +3,7 @@
 import sys
 sys.dont_write_bytecode = True
 
+from .base import BaseObject
 
 class Droplet(object):
 
@@ -43,3 +44,17 @@ class Droplet(object):
         :rtype: list<dict>
         """
         return self.client.get_droplet_snapshots(self._id)
+
+
+class Kernel(BaseObject):
+    """DigitalOcean droplet kernel object"""
+
+    version, id, name = (None,) * 3
+
+    def __repr__(self):
+        return "Kernel %s [Name: %s | Version: %s]" % (
+            self.id, self.name, self.version)
+
+    def __str__(self):
+        return "Kernel %s [Name: %s | Version: %s]" % (
+            self.id, self.name, self.version)
