@@ -256,7 +256,7 @@ class DOClient(object):
         url = "%s%s" % (self.droplet_base_url, droplet_id)
         response = requests.delete(url=url,
                                    headers=self.request_headers)
-        if response.status_code != 200:
+        if response.status_code != 204:
             raise APIAuthError("Invalid authorization bearer")
 
         return {"message": "Successfully deleted droplet" % droplet}
