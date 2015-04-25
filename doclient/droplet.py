@@ -52,8 +52,9 @@ class Droplet(BaseObject):
 
     def delete(self):
         """
-        DigitalOcean droplet delete helper. Deletes a particular droplet.
-        :rtype: NoneType
+        DigitalOcean droplet delete helper.
+        Deletes a particular droplet.
+        :rtype: dict
         """
         return self.client.delete_droplet(self.id)
 
