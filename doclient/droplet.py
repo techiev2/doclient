@@ -10,29 +10,29 @@ class Droplet(BaseObject):
 
     """DigitalOcean droplet object"""
 
-    client, _id, name = (None,) * 3
+    client, name = None, None
 
     def power_off(self):
         print "Powering off droplet %s" % self.name
-        self.client.poweroff_droplet(self._id)
+        self.client.poweroff_droplet(self.id)
 
     def power_on(self):
         print "Powering on droplet %s" % self.name
-        self.client.poweron_droplet(self._id)
+        self.client.poweron_droplet(self.id)
 
     def power_cycle(self):
         print "Power cycling droplet %s" % self.name
-        self.client.powercycle_droplet(self._id)
+        self.client.powercycle_droplet(self.id)
 
     def __repr__(self):
-        return "Droplet %s <ID: %s>" % (self.name, self._id)
+        return "Droplet %s <ID: %s>" % (self.name, self.id)
 
     def __str__(self):
-        return "Droplet %s <ID: %s>" % (self.name, self._id)
+        return "Droplet %s <ID: %s>" % (self.name, self.id)
 
     def as_dict(self):
         """Returns a dictionary representation of a Droplet"""
-        return {"name": self.name, "id": self._id}
+        return {"name": self.name, "id": self.id}
 
     def get_snapshots(self):
         """
@@ -40,7 +40,7 @@ class Droplet(BaseObject):
         Returns a list of snapshots created for a particular droplet.
         :rtype: list<dict>
         """
-        return self.client.get_droplet_snapshots(self._id)
+        return self.client.get_droplet_snapshots(self.id)
 
     def get_kernels(self):
         """
@@ -48,13 +48,13 @@ class Droplet(BaseObject):
         Returns a list of kernels available for a particular droplet.
         :rtype: list<dict>
         """
-        return self.client.get_droplet_kernels(self._id)
+        return self.client.get_droplet_kernels(self.id)
 
 
 class Kernel(BaseObject):
     """DigitalOcean droplet kernel object"""
 
-    version, id, name = (None,) * 3
+    version, name = None, None
 
     def __repr__(self):
         return "Kernel %s [Name: %s | Version: %s]" % (
