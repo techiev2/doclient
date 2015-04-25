@@ -102,3 +102,15 @@ class Image(BaseObject):
         return "Image %s [%s]" % (self.id, self.name)
 
 
+class DropletSize(BaseObject):
+
+    price_monthly, price_hourly, memory, disk, slug = (None,) * 5
+    regions, transfer, available, vcplus = (None,) * 4
+
+    def __repr__(self):
+        available = "Available" if self.available else "Not available"
+        return "Size %s [%s]" % (self.slug, self.available)
+
+    def __str__(self):
+        available = "Available" if self.available else "Not available"
+        return "Size %s [%s]" % (self.slug, self.available)
