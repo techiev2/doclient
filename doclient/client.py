@@ -58,7 +58,7 @@ class DOClient(object):
     def __init__(self, token):
         """DigitalOcean APIv2 client init"""
         self._token = token
-        self.droplets = []
+        self.droplets = None
         self.get_droplets()
 
     @property
@@ -113,6 +113,7 @@ class DOClient(object):
                 "Unable to fetch data from DigitalOcean API.")
 
         droplets = response.json().get("droplets", [])
+        _droplets = []
 
         for droplet in droplets:
             droplet = Droplet(**{
@@ -120,7 +121,9 @@ class DOClient(object):
                 "_id": droplet.get("id"),
                 "client": self
             })
-            self.droplets.append(droplet) 
+            _droplets.append(droplet)
+
+        self.droplets = _droplets
 
     def poweroff_droplet(self, instance_id):
         """
