@@ -1,7 +1,7 @@
 #! coding=utf-8
 """DigitalOcean APIv2 client errors module"""
 __author__ = "Sriram Velamur<sriram.velamur@gmail.com>"
-__all__ = ("APIAuthError", "InvalidArgumentError")
+__all__ = ("APIAuthError", "InvalidArgumentError", "APIError")
 
 import sys
 sys.dont_write_bytecode = True
@@ -37,3 +37,19 @@ class InvalidArgumentError(BaseException):
         message = "DOClient::InvalidArgumentError: %s" % message
         args = (message,)
         super(InvalidArgumentError, self).__init__(*args, **kwargs)
+
+
+class APIError(BaseException):
+    """
+    DigitalOcean APIv2 generic API error class.
+    Raised when a failure response is received from the
+    API that is not an authentication related one.
+    """
+
+    def __init__(self, *args, **kwargs):
+        if not args:
+            raise RuntimeError("Invalid invocation")
+        message = args[0]
+        message = "DOClient::APIError: %s" % message
+        args = (message,)
+        super(APIError, self).__init__(*args, **kwargs)
