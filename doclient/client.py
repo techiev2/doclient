@@ -17,6 +17,8 @@ class DOClient(object):
 
     """DigitalOcean APIv2 client"""
 
+    _id = None
+
     droplet_url = "".join([
         "https://api.digitalocean.com/v2/",
         "droplets?page=1&per_page=100"
@@ -54,6 +56,10 @@ class DOClient(object):
         self.get_droplets()
 
     @property
+    def id(self):
+        return self._id
+
+    @property
     def user_information(self):
         response = requests.get(url=self.userinfo_url,
                             headers=self.request_headers)
@@ -62,10 +68,10 @@ class DOClient(object):
         return DOUser(**response.json().get("account"))
 
     def __repr__(self):
-        return "DigitalOcean API Client %s" % self.id
+        return "DigitalOcean API Client %s" % self._id
 
     def __str__(self):
-        return "DigitalOcean API Client %s" % self.id
+        return "DigitalOcean API Client %s" % self._id
 
     @property
     def token(self):
