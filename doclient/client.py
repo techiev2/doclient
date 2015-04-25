@@ -8,7 +8,7 @@ from ast import literal_eval
 
 import requests
 
-from .droplet import Droplet, Kernel
+from .droplet import Droplet, Kernel, Snapshot
 from .errors import APIAuthError, InvalidArgumentError
 from .user import DOUser
 
@@ -222,7 +222,8 @@ class DOClient(object):
         if response.status_code != 200:
             raise APIAuthError("Invalid authorization bearer")
 
-        return response.json()
+        snapshots = response.json().get("snapshots")
+        return [Snapshot(**snapshot) for snapshot in snapshots]
 
     def get_droplet_kernels(self, droplet_id):
         """
