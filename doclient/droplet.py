@@ -46,7 +46,7 @@ class Droplet(BaseObject):
         """
         DigitalOcean droplet kernels list helper.
         Returns a list of kernels available for a particular droplet.
-        :rtype: list<dict>
+        :rtype: list<doclient.droplet.Kernel>
         """
         return self.client.get_droplet_kernels(self.id)
 

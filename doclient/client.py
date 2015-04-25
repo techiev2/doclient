@@ -269,7 +269,7 @@ class DOClient(object):
         Returns a list of kernels available for the requested droplet.
         :param droplet_id: ID of droplet to get available kernels for.
         :type  droplet_id: int
-        :rtype: list<dict>
+        :rtype: list<doclient.droplet.Kernel>
         """
         url = self.droplet_kernels_url % droplet_id
         response = requests.get(url=url,
