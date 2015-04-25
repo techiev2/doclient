@@ -48,6 +48,10 @@ class DOClient(object):
         droplet_base_url,
         "%s/kernels?page=1&per_page=100"
     ])
+    droplet_neighbours_url = "".join([
+        droplet_base_url,
+        "%s/neighbors"
+    ])
 
     # Metadata
 
@@ -279,6 +283,23 @@ class DOClient(object):
 
         kernels = response.json().get("kernels")
         return [Kernel(**kernel) for kernel in kernels]
+
+    def get_droplet_neighbours(self, droplet_id):
+        """
+        DigitalOcean APIv2 droplet neighbours helper method.
+        Returns a list of droplets running on the same physical server.
+        :param droplet_id: ID of droplet to get neighbours for.
+        :type  droplet_id: int
+        :rtype: list<doclient.droplet.Droplet>
+        """
+        url = self.droplet_neighbours_url % droplet_id
+        response = requests.get(url=url,
+                                headers=self.request_headers)
+        if response.status_code != 200:
+            raise APIAuthError("Invalid authorization bearer")
+
+        droplets = response.json().get("droplets")
+        return [Droplet(**droplet) for droplet in droplets]
 
     def delete_droplet(self, droplet_id):
         """

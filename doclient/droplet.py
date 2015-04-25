@@ -50,6 +50,14 @@ class Droplet(BaseObject):
         """
         return self.client.get_droplet_kernels(self.id)
 
+    def get_neighbours(self):
+        """
+        DigitalOcean droplet neighbours helper.
+        Returns a list of droplets running on the same physical server.
+        :rtype: list<doclient.droplet.Droplet>
+        """
+        return self.client.get_droplet_neighbours(self.id)
+
     def delete(self):
         """
         DigitalOcean droplet delete helper.
