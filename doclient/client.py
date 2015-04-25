@@ -30,8 +30,10 @@ class DOClient(object):
     ])
 
     userinfo_url = "https://api.digitalocean.com/v2/account"
+
+    droplet_base_url = "https://api.digitalocean.com/v2/droplets/"
     droplet_snapshot_url = "".join([
-        "https://api.digitalocean.com/v2/droplets/",
+        droplet_base_url,
         "%s/snapshots?page=1&per_page=100"
     ])
 
