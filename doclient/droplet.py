@@ -42,6 +42,14 @@ class Droplet(BaseObject):
         """
         return self.client.get_droplet_snapshots(self._id)
 
+    def get_kernels(self):
+        """
+        DigitalOcean droplet kernels list helper.
+        Returns a list of kernels available for a particular droplet.
+        :rtype: list<dict>
+        """
+        return self.client.get_droplet_kernels(self._id)
+
 
 class Kernel(BaseObject):
     """DigitalOcean droplet kernel object"""

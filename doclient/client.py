@@ -8,7 +8,7 @@ from ast import literal_eval
 
 import requests
 
-from .droplet import Droplet
+from .droplet import Droplet, Kernel
 from .errors import APIAuthError, InvalidArgumentError
 from .user import DOUser
 
@@ -35,6 +35,10 @@ class DOClient(object):
     droplet_snapshot_url = "".join([
         droplet_base_url,
         "%s/snapshots?page=1&per_page=100"
+    ])
+    droplet_kernels_url = "".join([
+        droplet_base_url,
+        "%s/kernels?page=1&per_page=100"
     ])
 
     # Metadata
@@ -216,6 +220,23 @@ class DOClient(object):
             raise APIAuthError("Invalid authorization bearer")
 
         return response.json()
+
+    def get_droplet_kernels(self, droplet_id):
+        """
+        DigitalOcean APIv2 droplet kernels helper method.
+        Returns a list of kernels available for the requested droplet.
+        :param droplet_id: ID of droplet to get available kernels for.
+        :type  droplet_id: int
+        :rtype: list<dit>
+        """
+        url = self.droplet_kernels_url % droplet_id
+        response = requests.get(url=url,
+                                headers=self.request_headers)
+        if response.status_code != 200:
+            raise APIAuthError("Invalid authorization bearer")
+
+        kernels = response.json().get("kernels")
+        return Kernel(**kernels[0])
 
 
 if __name__ == "__main__":
