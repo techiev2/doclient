@@ -63,3 +63,22 @@ class Kernel(BaseObject):
     def __str__(self):
         return "Kernel %s [Name: %s | Version: %s]" % (
             self.id, self.name, self.version)
+
+
+class Snapshot(BaseObject):
+
+    droplet, _id, name, distribution, public = (None,) * 5
+    regions, created_at = None, None
+    _type, min_disk_size = None, None
+
+    @property
+    def type(self):
+        return self._type
+
+    def __repr__(self):
+        return "Snapshot %s [%s] of droplet %s. Running %s" % \
+            (self.id, self.name, self.droplet, self.distribution)
+
+    def __str__(self):
+        return "Snapshot %s [%s] of droplet %s. Running %s" % \
+            (self.id, self.name, self.droplet, self.distribution)
