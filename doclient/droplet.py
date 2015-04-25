@@ -50,6 +50,12 @@ class Droplet(BaseObject):
         """
         return self.client.get_droplet_kernels(self.id)
 
+    def delete(self):
+        """
+        DigitalOcean droplet delete helper. Deletes a particular droplet.
+        :rtype: NoneType
+        """
+        return self.client.delete_droplet(self.id)
 
 class Kernel(BaseObject):
     """DigitalOcean droplet kernel object"""

@@ -242,6 +242,25 @@ class DOClient(object):
         kernels = response.json().get("kernels")
         return [Kernel(**kernel) for kernel in kernels]
 
+    def delete_droplet(self, droplet_id):
+        """
+        DigitalOcean APIv2 droplet delete method.
+        Deletes a requested droplet.
+        :param droplet_id: ID of droplet to delete.
+        :type  droplet_id: int
+        :rtype: dict
+        """
+        droplet = self.get_droplet(droplet_id)
+        if not droplet:
+            raise InvalidArgumentError("Unknown droplet")
+        url = "%s%s" % (self.droplet_base_url, droplet_id)
+        response = requests.delete(url=url,
+                                   headers=self.request_headers)
+        if response.status_code != 200:
+            raise APIAuthError("Invalid authorization bearer")
+
+        return {"message": "Successfully deleted droplet" % droplet}
+
 
 if __name__ == "__main__":
     pass
