@@ -28,6 +28,12 @@ class DOClient(object):
     ])
 
     userinfo_url = "https://api.digitalocean.com/v2/account"
+    droplet_snapshot_url = "".join([
+        "https://api.digitalocean.com/v2/droplets/",
+        "%s/snapshots?page=1&per_page=100"
+    ])
+
+    # Metadata
 
     poweroff_data = json_dumps({
         "type": "power_off"
@@ -186,6 +192,22 @@ class DOClient(object):
         return filter(
             lambda x: re_match(matcher, x.name) is not None,
             self.droplets)
+
+    def get_droplet_snapshots(self, droplet_id):
+        """
+        DigitalOcean APIv2 droplet snapshots helper method.
+        Returns a list of snapshots created for the requested droplet.
+        :param droplet_id: ID of droplet to get snapshots for.
+        :type  droplet_id: int
+        :rtype: list<dit>
+        """
+        url = self.droplet_snapshot_url % droplet_id
+        response = requests.get(url=url,
+                                headers=self.request_headers)
+        if response.status_code != 200:
+            raise APIAuthError("Invalid authorization bearer")
+
+        return response.json()
 
 
 if __name__ == "__main__":
