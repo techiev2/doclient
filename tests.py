@@ -4,8 +4,9 @@ import sys
 sys.dont_write_bytecode = True
 from os import environ
 import unittest
+from types import NoneType
 
-from doclient import DOClient, APIAuthError
+from doclient import DOClient, APIAuthError, Droplet
 
 
 class DOClientTest(unittest.TestCase):
@@ -16,7 +17,11 @@ class DOClientTest(unittest.TestCase):
     def test_valid_client(self):
         """Test valid DOClient instance initalization"""
         client = DOClient(self.token)
+
         self.assertTrue(hasattr(client, "filter_droplets") == True)
+        self.assertNotIsInstance(client.droplets, NoneType)
+        self.assertIsInstance(client.droplets, list)
+        self.assertIsInstance(client.droplets[0], Droplet)
 
     def test_invalid_client(self):
         """Test invalid DOClient instance initalization"""
