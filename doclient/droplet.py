@@ -5,15 +5,12 @@ sys.dont_write_bytecode = True
 
 from .base import BaseObject
 
-class Droplet(object):
+
+class Droplet(BaseObject):
 
     """DigitalOcean droplet object"""
 
     client, _id, name = (None,) * 3
-
-    def __init__(self, **kwargs):
-        for name, value in kwargs.iteritems():
-            setattr(self, name, value)
 
     def power_off(self):
         print "Powering off droplet %s" % self.name
