@@ -21,7 +21,8 @@ class DOClientTest(unittest.TestCase):
         self.assertTrue(hasattr(client, "filter_droplets") == True)
         self.assertNotIsInstance(client.droplets, NoneType)
         self.assertIsInstance(client.droplets, list)
-        self.assertIsInstance(client.droplets[0], Droplet)
+        for droplet in client.droplets:
+            self.assertIsInstance(droplet, Droplet)
 
     def test_invalid_client(self):
         """Test invalid DOClient instance initalization"""
