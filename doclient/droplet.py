@@ -16,15 +16,15 @@ class Droplet(object):
 
     def power_off(self):
         print "Powering off droplet %s" % self.name
-        self.client.poweroff_instance(self._id)
+        self.client.poweroff_droplet(self._id)
 
     def power_on(self):
         print "Powering on droplet %s" % self.name
-        self.client.poweron_instance(self._id)
+        self.client.poweron_droplet(self._id)
 
     def power_cycle(self):
         print "Power cycling droplet %s" % self.name
-        self.client.powercycle_instance(self._id)
+        self.client.powercycle_droplet(self._id)
 
     def __repr__(self):
         return "Droplet %s <ID: %s>" % (self.name, self._id)

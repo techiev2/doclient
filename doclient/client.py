@@ -116,7 +116,7 @@ class DOClient(object):
             })
             self.droplets.append(droplet) 
 
-    def poweroff_instance(self, instance_id):
+    def poweroff_droplet(self, instance_id):
         """
         Instance power off helper method.
         :param instance_id: ID of the instance to turn off.
@@ -128,7 +128,7 @@ class DOClient(object):
                                  headers=self.request_headers,
                                  data=self.poweroff_data)
 
-    def poweron_instance(self, instance_id):
+    def poweron_droplet(self, instance_id):
         """
         Instance power on helper method.
         :param instance_id: ID of the instance to turn on.
@@ -140,7 +140,7 @@ class DOClient(object):
                                  headers=self.request_headers,
                                  data=self.poweron_data)
 
-    def powercycle_instance(self, instance_id):
+    def powercycle_droplet(self, instance_id):
         """
         Instance power cycle helper method.
         :param instance_id: ID of the instance to powercycle.
