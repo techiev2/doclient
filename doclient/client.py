@@ -239,7 +239,7 @@ class DOClient(object):
             raise APIAuthError("Invalid authorization bearer")
 
         kernels = response.json().get("kernels")
-        return Kernel(**kernels[0])
+        return [Kernel(**kernel) for kernel in kernels]
 
 
 if __name__ == "__main__":
