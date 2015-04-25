@@ -35,3 +35,11 @@ class Droplet(object):
     def as_dict(self):
         """Returns a dictionary representation of a Droplet"""
         return {"name": self.name, "id": self._id}
+
+    def get_snapshots(self):
+        """
+        DigitalOcean droplet snapshots list helper.
+        Returns a list of snapshots created for a particular droplet.
+        :rtype: list<dict>
+        """
+        return self.client.get_droplet_snapshots(self._id)
