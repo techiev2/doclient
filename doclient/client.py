@@ -10,6 +10,7 @@ import requests
 
 from .droplet import Droplet
 from .errors import APIAuthError, InvalidArgumentError
+from .user import DOUser
 
 
 class DOClient(object):
@@ -25,6 +26,8 @@ class DOClient(object):
         "https://api.digitalocean.com/v2/",
         "droplets/%s/actions"
     ])
+
+    userinfo_url = "https://api.digitalocean.com/v2/account"
 
     poweroff_data = json_dumps({
         "type": "power_off"
@@ -43,6 +46,14 @@ class DOClient(object):
         self._token = token
         self.droplets = []
         self.get_droplets()
+
+    @property
+    def user_information(self):
+        response = requests.get(url=self.userinfo_url,
+                            headers=self.request_headers)
+        if not response.status_code == 200:
+            raise APIAuthError("Unable to authenticate session")
+        return DOUser(**response.json().get("account"))
 
     def __repr__(self):
         return "DigitalOcean API Client %s" % self.id
