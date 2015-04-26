@@ -79,6 +79,7 @@ class DOClient(object):
 
     @property
     def user_information(self):
+        """DigitalOcean APIv2 user information property"""
         response = requests.get(url=self.userinfo_url,
                             headers=self.request_headers)
         if not response.status_code == 200:
