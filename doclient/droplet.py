@@ -136,8 +136,8 @@ class DropletSize(BaseObject):
 
     def __repr__(self):
         available = "Available" if self.available else "Not available"
-        return "Size %s [%s]" % (self.slug, self.available)
+        return "Size %s [%s]" % (self.slug, available)
 
     def __str__(self):
         available = "Available" if self.available else "Not available"
-        return "Size %s [%s]" % (self.slug, self.available)
+        return "Size %s [%s]" % (self.slug, available)
