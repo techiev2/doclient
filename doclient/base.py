@@ -21,10 +21,11 @@ class BaseObject(object):
     def __init__(self, **kwargs):
         """BaseObject class init"""
         for name, value in kwargs.iteritems():
-            if name == "id":
-                name = "_id"
+            if name in ("id", "token"):
+                name = "_%s" % name
             setattr(self, name, value)
-            self.props.append(name)
+            if name not in self.props:
+                self.props.append(name)
 
     def as_dict(self):
         """Dictionary repr for BaseObject objects"""
