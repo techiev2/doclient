@@ -183,14 +183,10 @@ class DOClient(BaseObject):
         Get list of droplets for the requested account.
         :raises: APIAuthError
         """
-        response = requests.get(url=self.droplet_url,
-                                headers=self.request_headers)
 
-        if response.status_code != 200:
-            raise APIAuthError(
-                "Unable to fetch data from DigitalOcean API.")
+        response = self.api_request(url=self.droplet_url)
 
-        droplets = response.json().get("droplets", [])
+        droplets = response.get("droplets", [])
         _droplets = []
 
         for droplet in droplets:
