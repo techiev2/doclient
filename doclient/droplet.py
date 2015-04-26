@@ -1,4 +1,11 @@
 #! coding=utf-8
+"""
+DigitalOcean APIv2 droplet module.
+Provides interface classes to Droplets, Kernels,
+Snapshots, Images, and Sizes
+"""
+__author__ = "Sriram Velamur<sriram.velamur@gmail.com>"
+__all__ = ("Droplet", "Kernel", "Snapshot", "Image", "DropletSize")
 
 import sys
 sys.dont_write_bytecode = True
