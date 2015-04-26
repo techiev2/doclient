@@ -239,8 +239,7 @@ class DOClient(BaseObject):
             raise InvalidArgumentError(
                 "Method requires a valid integer droplet id")
 
-        droplet = filter(lambda x: x._id == droplet_id,
-                         self.droplets)
+        droplet = [x for x in self.droplets if x.id == droplet_id]
         return droplet[0] if droplet else None
 
     def filter_droplets(self, matcher=None):
@@ -261,9 +260,8 @@ class DOClient(BaseObject):
                 "Method requires a string filter token")
 
         matcher = re_compile(".*?%s.*?" % matcher)
-        return filter(
-            lambda x: re_match(matcher, x.name) is not None,
-            self.droplets)
+        return [x for x in self.droplets
+                if re_match(matcher, x.name) is not None]
 
     def get_droplet_snapshots(self, droplet_id):
         """
