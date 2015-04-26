@@ -21,6 +21,9 @@ class DOClient(BaseObject):
 
     """DigitalOcean APIv2 client"""
 
+    api_calls_left = None
+    api_quota_reset_at = None
+
     droplet_url = "".join([
         "https://api.digitalocean.com/v2/",
         "droplets?page=1&per_page=100"
@@ -145,6 +148,8 @@ class DOClient(BaseObject):
         if response.status_code > 300:
             raise APIAuthError(
                 "Unable to fetch data from DigitalOcean API.")
+
+        self.api_calls_left = response.headers.get("ratelimit-remaining")
 
         return response.json()
 
