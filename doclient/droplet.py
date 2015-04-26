@@ -20,14 +20,17 @@ class Droplet(BaseObject):
     client, name = None, None
 
     def power_off(self):
+        """Droplet power off helper method"""
         print "Powering off droplet %s" % self.name
         self.client.poweroff_droplet(self.id)
 
     def power_on(self):
+        """Droplet power on helper method"""
         print "Powering on droplet %s" % self.name
         self.client.poweron_droplet(self.id)
 
     def power_cycle(self):
+        """Droplet power cycle helper method"""
         print "Power cycling droplet %s" % self.name
         self.client.powercycle_droplet(self.id)
 
@@ -73,7 +76,9 @@ class Droplet(BaseObject):
         """
         return self.client.delete_droplet(self.id)
 
+
 class Kernel(BaseObject):
+
     """DigitalOcean droplet kernel object"""
 
     version, name = None, None
@@ -89,12 +94,15 @@ class Kernel(BaseObject):
 
 class Snapshot(BaseObject):
 
+    """DigitalOcean droplet snapshot object"""
+
     droplet, _id, name, distribution, public = (None,) * 5
     regions, created_at = None, None
     _type, min_disk_size = None, None
 
     @property
     def type(self):
+        """Droplet snapshot type property"""
         return self._type
 
     def __repr__(self):
@@ -108,6 +116,8 @@ class Snapshot(BaseObject):
 
 class Image(BaseObject):
 
+    """DigitalOcean droplet base image object"""
+
     min_disk_size, slug, name, _id, regions = (None,) * 5
 
     def __repr__(self):
@@ -118,6 +128,8 @@ class Image(BaseObject):
 
 
 class DropletSize(BaseObject):
+
+    """DigitalOcean droplet size repr object"""
 
     price_monthly, price_hourly, memory, disk, slug = (None,) * 5
     regions, transfer, available, vcplus = (None,) * 4
