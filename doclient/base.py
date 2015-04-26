@@ -45,7 +45,10 @@ class BaseObject(object):
         """
         Overridden __getattr__ method to work with id property
         """
-        if key == "id":
-            return self._id
-        else:
-            return self.key
+        try:
+            if key == "id":
+                return self._id
+            else:
+                return self.key
+        except RuntimeError:
+            return None
