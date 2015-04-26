@@ -109,6 +109,45 @@ class DOClient(BaseObject):
             "Authorization": "Bearer %s" % self.token
         }
 
+    def api_request(self, url, method="GET", data=None):
+        """
+        DigitalOcean API request helper method.
+        :param url: REST API url to place a HTTP request to.
+        :type  url: basestring
+        :param method: HTTP method
+        :type  method: basestring
+        :param data: HTTP payload
+        :type  data: dict, json
+        """
+
+        if self.api_calls_left is not None and self.api_calls_left < 1:
+            raise APIAuthError("Rate limit exceeded.")
+
+        method = method or "GET"
+        method = method.lower()
+        http_method = getattr(requests, method, None)
+
+        if http_method is None:
+            raise InvalidArgumentError("Invalid HTTP method requested")
+
+        kwargs = {
+            "url": url,
+            "headers": self.request_headers,
+        }
+
+        if data:
+            if isinstance(data, dict):
+                data = json_dumps(data)
+            kwargs.update({"data": data})
+
+        response = http_method(**kwargs)
+
+        if response.status_code > 300:
+            raise APIAuthError(
+                "Unable to fetch data from DigitalOcean API.")
+
+        return response.json()
+
     def get_images(self):
         """
         Get list of images available.
