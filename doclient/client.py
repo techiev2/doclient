@@ -8,12 +8,13 @@ from ast import literal_eval
 
 import requests
 
+from .base import BaseObject
 from .droplet import Droplet, Kernel, Snapshot, Image, DropletSize
 from .errors import APIAuthError, InvalidArgumentError, APIError
 from .user import DOUser
 
 
-class DOClient(object):
+class DOClient(BaseObject):
 
     """DigitalOcean APIv2 client"""
 
@@ -72,10 +73,6 @@ class DOClient(object):
         self._token = token
         self.droplets = None
         self.get_droplets()
-
-    @property
-    def id(self):
-        return self._id
 
     @property
     def user_information(self):
