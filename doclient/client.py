@@ -173,36 +173,50 @@ class DOClient(BaseObject):
         Instance power off helper method.
         :param instance_id: ID of the instance to turn off.
         :type  instance_id: int, basestring<int>
-        :rtype: NoneType
+        :rtype: dict
         """
         url = self.power_onoff_url % instance_id
         response = requests.post(url=url,
                                  headers=self.request_headers,
                                  data=self.poweroff_data)
+        if response.status_code in (401, 403):
+            raise APIAuthError("Not authorized to power off droplet")
+
+        return {"message": "Initiated droplet poweroff"}
 
     def poweron_droplet(self, instance_id):
         """
         Instance power on helper method.
         :param instance_id: ID of the instance to turn on.
         :type  instance_id: int, basestring<int>
-        :rtype: NoneType
+        :rtype: dict
         """
         url = self.power_onoff_url % instance_id
         response = requests.post(url=url,
                                  headers=self.request_headers,
                                  data=self.poweron_data)
 
+        if response.status_code in (401, 403):
+            raise APIAuthError("Not authorized to power on droplet")
+
+        return {"message": "Initiated droplet poweron"}
+
     def powercycle_droplet(self, instance_id):
         """
         Instance power cycle helper method.
         :param instance_id: ID of the instance to powercycle.
         :type  instance_id: int, basestring<int>
-        :rtype: NoneType
+        :rtype: dict
         """
         url = self.power_onoff_url % instance_id
         response = requests.post(url=url,
                                  headers=self.request_headers,
                                  data=self.poweron_data)
+
+        if response.status_code in (401, 403):
+            raise APIAuthError("Not authorized to power cycle droplet")
+
+        return {"message": "Initiated droplet powercycle"}
 
     def get_droplet(self, droplet_id):
         """
