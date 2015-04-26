@@ -11,7 +11,7 @@ class DOUser(object):
 
     """DigitalOcean user object"""
 
-    email_verified, droplet_limit, uuid, email = (None,) * 4
+    email_verified, droplet_count, droplet_limit, uuid, email = (None,) * 5
 
     def __init__(self, **kwargs):
         """DigitalOcean user object init"""
