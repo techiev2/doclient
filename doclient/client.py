@@ -1,4 +1,7 @@
 #! coding=utf-8
+"""DigitalOcean APIv2 client module"""
+__author__ = "Sriram Velamur<sriram.velamur@gmail.com>"
+__all__ = ("DOClient",)
 
 import sys
 sys.dont_write_bytecode = True
