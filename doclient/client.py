@@ -81,7 +81,7 @@ class DOClient(object):
     def user_information(self):
         """DigitalOcean APIv2 user information property"""
         response = requests.get(url=self.userinfo_url,
-                            headers=self.request_headers)
+                                headers=self.request_headers)
         if not response.status_code == 200:
             raise APIAuthError("Unable to authenticate session")
         return DOUser(**response.json().get("account"))
@@ -225,7 +225,7 @@ class DOClient(object):
             raise InvalidArgumentError(
                 "Method requires a valid integer droplet id")
 
-        droplet = filter(lambda x: x._id==droplet_id,
+        droplet = filter(lambda x: x._id == droplet_id,
                          self.droplets)
         return droplet[0] if droplet else None
 
@@ -390,7 +390,6 @@ class DOClient(object):
 
         except AssertionError, err:
             raise InvalidArgumentError(err)
-
 
 
 if __name__ == "__main__":
