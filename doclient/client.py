@@ -100,8 +100,6 @@ class DOClient(BaseObject):
         """
         return self._token
 
-    # [TODO] Add a setter for request_headers to allow for additional
-    # headers' addition to DOClient.
     @property
     def request_headers(self):
         """
