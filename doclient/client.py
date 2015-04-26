@@ -21,8 +21,6 @@ class DOClient(BaseObject):
 
     """DigitalOcean APIv2 client"""
 
-    _id = None
-
     droplet_url = "".join([
         "https://api.digitalocean.com/v2/",
         "droplets?page=1&per_page=100"
