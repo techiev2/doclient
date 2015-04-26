@@ -25,6 +25,7 @@ class DOClient(BaseObject):
 
     api_calls_left = None
     api_quota_reset_at = None
+    user = None
 
     droplet_url = "".join([
         "https://api.digitalocean.com/v2/",
@@ -78,16 +79,25 @@ class DOClient(BaseObject):
         """DigitalOcean APIv2 client init"""
         self._token = token
         self.droplets = None
+        self.user = None
         self.get_droplets()
+        self.get_user_information()
 
-    @property
-    def user_information(self):
+    def get_user_information(self):
         """DigitalOcean APIv2 user information property"""
         response = requests.get(url=self.userinfo_url,
                                 headers=self.request_headers)
         if not response.status_code == 200:
             raise APIAuthError("Unable to authenticate session")
-        return DOUser(**response.json().get("account"))
+
+        payload = response.json().get("account")
+        payload.update({
+            "droplet_count": len(self.droplets)
+        })
+
+        user = DOUser(**payload)
+        self.user = user
+        return user
 
     def __repr__(self):
         return "DigitalOcean API Client %s" % self._id
@@ -152,6 +162,7 @@ class DOClient(BaseObject):
                 "Unable to fetch data from DigitalOcean API.")
 
         reset_timestamp = response.headers.get("ratelimit-reset")
+        reset_timestamp = float(reset_timestamp)
         reset_timestamp = dt.fromtimestamp(mktime(gmtime(reset_timestamp)))
 
         self.api_calls_left = response.headers.get("ratelimit-remaining")
