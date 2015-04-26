@@ -8,6 +8,8 @@ sys.dont_write_bytecode = True
 from json import dumps as json_dumps
 from re import compile as re_compile, match as re_match
 from ast import literal_eval
+from datetime import datetime as dt
+from time import mktime, gmtime
 
 import requests
 
@@ -149,7 +151,11 @@ class DOClient(BaseObject):
             raise APIAuthError(
                 "Unable to fetch data from DigitalOcean API.")
 
+        reset_timestamp = response.headers.get("ratelimit-reset")
+        reset_timestamp = dt.fromtimestamp(mktime(gmtime(reset_timestamp)))
+
         self.api_calls_left = response.headers.get("ratelimit-remaining")
+        self.api_quota_reset_at = reset_timestamp
 
         return response.json()
 
