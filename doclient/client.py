@@ -127,6 +127,24 @@ class DOClient(BaseObject):
         """
         return self._request_headers
 
+    def add_request_headers(self, header_data):
+        is_valid_dict = isinstance(header_data, dict)
+        is_valid_tuple = isinstance(header_data, tuple) \
+            and len(header_data) == 2
+        passes = is_valid_dict or is_valid_tuple
+        if not passes:
+            raise InvalidArgumentError(
+                "".join([
+                "Request header setter requires a ",
+                "dictionary or tuple of key/value"
+            ]))
+
+        if is_valid_dict:
+            for key, value in header_data.iteritems():
+                self._request_headers[key] = value
+        elif is_valid_tuple:
+            self._request_headers[header_data[0]] = header_data[1]
+
     def api_request(self, url, method="GET", data=None, return_json=True):
         """
         DigitalOcean API request helper method.
