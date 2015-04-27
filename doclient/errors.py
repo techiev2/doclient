@@ -7,49 +7,50 @@ import sys
 sys.dont_write_bytecode = True
 
 
-class APIAuthError(BaseException):
+class BaseError(BaseException):
+
+    """
+    DigitalOcean APIv2 base error class.
+    Derived error classes need to specify their error message prefix.
+    If a child class fails to provide a prefix property, prefix defaults
+    to DOClient::GeneralError
+    """
+
+    def __init__(self, *args, **kwargs):
+        if not args:
+            raise RuntimeError("Invalid invocation")
+        message = args[0]
+        prefix = getattr(self, "prefix", "GeneralError")
+        message = "DOClient::%s%s: " % (prefix, message)
+        args = (message,)
+        super(BaseError, self).__init__(*args, **kwargs)
+
+
+class APIAuthError(BaseError):
     """
     DigitalOcean APIv2 authentication error class.
     Raised when client initialization receives a HTTP 401 while
     requesting for list of instances associated with the account.
     """
 
-    def __init__(self, *args, **kwargs):
-        if not args:
-            raise RuntimeError("Invalid invocation")
-        message = args[0]
-        message = "DOClient::APIError: %s" % message
-        args = (message,)
-        super(APIAuthError, self).__init__(*args, **kwargs)
+    prefix = "APIAuthError"
 
 
-class InvalidArgumentError(BaseException):
+class InvalidArgumentError(BaseError):
     """
     DigitalOcean APIv2 method arugment error class.
     Raised when a method receives an invalid, empty,
     or type mismatching value for an arugment.
     """
 
-    def __init__(self, *args, **kwargs):
-        if not args:
-            raise RuntimeError("Invalid invocation")
-        message = args[0]
-        message = "DOClient::InvalidArgumentError: %s" % message
-        args = (message,)
-        super(InvalidArgumentError, self).__init__(*args, **kwargs)
+    prefix = "InvalidArgumentError"
 
 
-class APIError(BaseException):
+class APIError(BaseError):
     """
     DigitalOcean APIv2 generic API error class.
     Raised when a failure response is received from the
     API that is not an authentication related one.
     """
 
-    def __init__(self, *args, **kwargs):
-        if not args:
-            raise RuntimeError("Invalid invocation")
-        message = args[0]
-        message = "DOClient::APIError: %s" % message
-        args = (message,)
-        super(APIError, self).__init__(*args, **kwargs)
+    prefix = "APIError"
