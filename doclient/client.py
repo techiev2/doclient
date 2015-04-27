@@ -200,14 +200,8 @@ class DOClient(BaseObject):
         Get list of images available.
         :raises: APIAuthError
         """
-        response = requests.get(url=self.images_url,
-                                headers=self.request_headers)
-
-        if response.status_code != 200:
-            raise APIAuthError(
-                "Unable to fetch data from DigitalOcean API.")
-
-        images = response.json().get("images")
+        response = self.api_request(url=self.images_url)
+        images = response.get("images")
         return [Image(**image) for image in images]
 
     def get_sizes(self):
