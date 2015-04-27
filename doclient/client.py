@@ -186,9 +186,14 @@ class DOClient(BaseObject):
 
         response = http_method(**kwargs)
 
-        if response.status_code > 300:
+        if response.status_code == 400:
+            raise APIError("Invalid request data. Please check data")
+
+        elif response.status_code in (401, 403):
             raise APIAuthError(
-                "Unable to fetch data from DigitalOcean API.")
+                "Invalid authorization bearer. Please check token")
+        elif response.status_code == 500:
+            raise APIError("DigitalOcean API error. Please try later")
 
         reset_timestamp = response.headers.get("ratelimit-reset")
         reset_timestamp = float(reset_timestamp)
