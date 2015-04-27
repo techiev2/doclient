@@ -76,7 +76,11 @@ class DOClient(BaseObject):
     })
 
     def __init__(self, token):
-        """DigitalOcean APIv2 client init"""
+        """
+        DigitalOcean APIv2 client init
+        :param token: DigitalOcean API authentication token
+        :type  token: basestring
+        """
         super(DOClient, self).__init__(**{"token": token})
         self.droplets = None
         self.user = None
@@ -209,14 +213,8 @@ class DOClient(BaseObject):
         Get list of image sizes available.
         :raises: APIAuthError
         """
-        response = requests.get(url=self.sizes_url,
-                                headers=self.request_headers)
-
-        if response.status_code != 200:
-            raise APIAuthError(
-                "Unable to fetch data from DigitalOcean API.")
-
-        sizes = response.json().get("sizes")
+        response = self.api_request(url=self.sizes_url)
+        sizes = response.get("sizes")
         return [DropletSize(**size) for size in sizes]
 
     def get_droplets(self):
