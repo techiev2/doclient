@@ -80,6 +80,10 @@ class DOClient(BaseObject):
         self._token = token
         self.droplets = None
         self.user = None
+        self._request_headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer %s" % self.token
+        }
         self.get_droplets()
         self.get_user_information()
 
@@ -121,10 +125,7 @@ class DOClient(BaseObject):
         DigitalOcean API client base request headers property.
         Used with all of the DOClient's HTTP requests.
         """
-        return {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer %s" % self.token
-        }
+        return self._request_headers
 
     def api_request(self, url, method="GET", data=None, return_json=True):
         """
