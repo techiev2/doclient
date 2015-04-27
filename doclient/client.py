@@ -77,7 +77,7 @@ class DOClient(BaseObject):
 
     def __init__(self, token):
         """DigitalOcean APIv2 client init"""
-        self._token = token
+        super(DOClient, self).__init__(**{"token": token})
         self.droplets = None
         self.user = None
         self._request_headers = {
@@ -197,7 +197,7 @@ class DOClient(BaseObject):
 
     def get_images(self):
         """
-        Get list of images available.
+        Get list of images available in your DigitalOcean account.
         :raises: APIAuthError
         """
         response = self.api_request(url=self.images_url)
