@@ -340,12 +340,8 @@ class DOClient(BaseObject):
         :rtype: list<dict>
         """
         url = self.droplet_snapshot_url % droplet_id
-        response = requests.get(url=url,
-                                headers=self.request_headers)
-        if response.status_code != 200:
-            raise APIAuthError("Invalid authorization bearer")
-
-        snapshots = response.json().get("snapshots")
+        response = self.api_request(url=url)
+        snapshots = response.get("snapshots")
         return [Snapshot(**snapshot) for snapshot in snapshots]
 
     def get_droplet_kernels(self, droplet_id):
@@ -357,12 +353,8 @@ class DOClient(BaseObject):
         :rtype: list<doclient.droplet.Kernel>
         """
         url = self.droplet_kernels_url % droplet_id
-        response = requests.get(url=url,
-                                headers=self.request_headers)
-        if response.status_code != 200:
-            raise APIAuthError("Invalid authorization bearer")
-
-        kernels = response.json().get("kernels")
+        response = self.api_request(url=url)
+        kernels = response.get("kernels")
         return [Kernel(**kernel) for kernel in kernels]
 
     def get_droplet_neighbours(self, droplet_id):
@@ -374,12 +366,8 @@ class DOClient(BaseObject):
         :rtype: list<doclient.droplet.Droplet>
         """
         url = self.droplet_neighbours_url % droplet_id
-        response = requests.get(url=url,
-                                headers=self.request_headers)
-        if response.status_code != 200:
-            raise APIAuthError("Invalid authorization bearer")
-
-        droplets = response.json().get("droplets")
+        response = self.api_request(url=url)
+        droplets = response.get("droplets")
         return [Droplet(**droplet) for droplet in droplets]
 
     def delete_droplet(self, droplet_id):
@@ -394,12 +382,14 @@ class DOClient(BaseObject):
         if not droplet:
             raise InvalidArgumentError("Unknown droplet")
         url = "%s%s" % (self.droplet_base_url, droplet_id)
-        response = requests.delete(url=url,
-                                   headers=self.request_headers)
-        if response.status_code != 204:
-            raise APIAuthError("Invalid authorization bearer")
+        response = self.api_request(url=url,
+                                    method="delete",
+                                    return_json=False)
 
-        return {"message": "Successfully deleted droplet" % droplet}
+        message = "Successfully initiated droplet delete" % droplet
+        return {
+            "message": message
+        }
 
     def create_droplet(self, name, region, size, image,
                        ssh_keys=None, backups=False, ipv6=False,
