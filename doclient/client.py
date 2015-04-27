@@ -447,9 +447,9 @@ class DOClient(BaseObject):
                 "ipv6": ipv6,
                 "user_data": user_data,
             })
-            response = requests.post(url=self.droplet_base_url,
-                                     headers=self.request_headers,
-                                     data=payload)
+            response = self.api_request(url=self.droplet_base_url,
+                                        data=payload,
+                                        return_json=False)
 
             if response.status_code != 202:
                 raise APIError(
