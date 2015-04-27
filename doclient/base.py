@@ -29,7 +29,10 @@ class BaseObject(object):
 
     def as_dict(self):
         """Dictionary repr for BaseObject objects"""
-        return {k: getattr(self, k, None) for k in self.props}
+        return {
+            k if not k.startswith("_") else k[1:]: getattr(self, k, None)
+                for k in self.props
+        }
 
     def as_json(self):
         """JSON repr method for BaseObject objects"""
