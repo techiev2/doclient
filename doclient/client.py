@@ -84,9 +84,11 @@ class DOClient(BaseObject):
         self.get_user_information()
 
     def get_user_information(self):
-        """DigitalOcean APIv2 user information property"""
-        response = requests.get(url=self.userinfo_url,
-                                headers=self.request_headers)
+        """DigitalOcean APIv2 user information helper method"""
+
+        response = self.api_request(url=self.userinfo_url,
+                                    return_json=False)
+
         if not response.status_code == 200:
             raise APIAuthError("Unable to authenticate session")
 
