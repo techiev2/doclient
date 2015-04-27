@@ -262,14 +262,13 @@ class DOClient(BaseObject):
         :rtype: dict
         """
         url = self.power_onoff_url % instance_id
-        response = requests.post(url=url,
-                                 headers=self.request_headers,
-                                 data=self.poweron_data)
-
-        if response.status_code in (401, 403):
-            raise APIAuthError("Not authorized to power on droplet")
-
-        return {"message": "Initiated droplet poweron"}
+        try:
+            response = self.api_request(url=url,
+                                        method="post",
+                                        data=self.poweron_data)
+            return {"message": "Initiated droplet poweron"}
+        except APIAuthError, error:
+            return {"message": error.message}
 
     def powercycle_droplet(self, instance_id):
         """
@@ -279,14 +278,13 @@ class DOClient(BaseObject):
         :rtype: dict
         """
         url = self.power_onoff_url % instance_id
-        response = requests.post(url=url,
-                                 headers=self.request_headers,
-                                 data=self.poweron_data)
-
-        if response.status_code in (401, 403):
-            raise APIAuthError("Not authorized to power cycle droplet")
-
-        return {"message": "Initiated droplet powercycle"}
+        try:
+            response = self.api_request(url=url,
+                                        method="post",
+                                        data=self.powercycle_data)
+            return {"message": "Initiated droplet power cycle"}
+        except APIAuthError, error:
+            return {"message": error.message}
 
     def get_droplet(self, droplet_id):
         """
