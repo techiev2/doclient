@@ -124,7 +124,7 @@ class DOClient(BaseObject):
             "Authorization": "Bearer %s" % self.token
         }
 
-    def api_request(self, url, method="GET", data=None):
+    def api_request(self, url, method="GET", data=None, return_json=True):
         """
         DigitalOcean API request helper method.
         :param url: REST API url to place a HTTP request to.
@@ -132,7 +132,11 @@ class DOClient(BaseObject):
         :param method: HTTP method
         :type  method: basestring
         :param data: HTTP payload
-        :type  data: dict, json
+        :type  data: dict<json>
+        :param return_json: Specifies reeturn data.
+                            If false, returns bare response.
+        :type  return_json: bool
+        :rtype: dict, requests.models.Response
         """
 
         if self.api_calls_left is not None and self.api_calls_left < 1:
@@ -168,7 +172,7 @@ class DOClient(BaseObject):
         self.api_calls_left = response.headers.get("ratelimit-remaining")
         self.api_quota_reset_at = reset_timestamp
 
-        return response.json()
+        return response.json() if return_json else response
 
     def get_images(self):
         """
