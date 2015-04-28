@@ -406,11 +406,16 @@ class DOClient(BaseObject):
         if not droplet:
             raise InvalidArgumentError("Unknown droplet")
         url = "%s%s" % (self.droplet_base_url, droplet_id)
-        response = self.api_request(url=url,
-                                    method="delete",
-                                    return_json=False)
+        try:
+            self.api_request(url=url,
+                             method="delete",
+                             return_json=False)
+            message = "Successfully initiated droplet delete" % droplet
+        except APIAuthError, auth_error:
+            message = auth_error.message
+        except APIError:
+            message = "DigitalOcean API error. Please try later"
 
-        message = "Successfully initiated droplet delete" % droplet
         return {
             "message": message
         }
