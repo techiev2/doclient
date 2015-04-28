@@ -203,3 +203,31 @@ class Domain(BaseObject):
             raise InvalidArgumentError(message)
 
         return Domain(**response.json().get("domain"))
+
+    @classmethod
+    @set_caller
+    def delete(cls, name):
+        """
+        Domain mapping delete helper method
+        :param name: Domain name
+        :type  name: basestring
+        :rtype: dict
+        """
+        url = "%s%s" % (cls.base_url, name)
+        response = cls.client.api_request(url=url,
+                                          method="delete",
+                                          return_json=False)
+        status = response.status_code
+        if status in (401, 403):
+            raise APIAuthError("Invalid authentication bearer")
+        elif status == 400:
+            raise InvalidArgumentError("Invalid payload data")
+        elif status == 500:
+            raise APIError("DigitalOcean API error. Please try later.")
+        elif status != 204:
+            message = response.json().get("message")
+            raise InvalidArgumentError(message)
+
+        return {
+            "message": "Successfully initiated domain mapping delete"
+        }

@@ -228,6 +228,15 @@ class DOClient(BaseObject):
         """
         return Domain.get(name)
 
+    def delete_domain(self, name):
+        """
+        Delete a domain mapping managed through DigitalOcean's DNS interface
+        :param name: Domain name
+        :type  name: basestring
+        :rtype: dict
+        """
+        return Domain.delete(name)
+
     def create_domain(self, name, ip_address):
         """
         Create domain name mapping for domains managed through
