@@ -22,12 +22,10 @@ class DOClientTest(unittest.TestCase):
 
     def test_valid_client(self):
         """Test valid DOClient instance initalization"""
-        # self.client = DOClient(self.token)
-        client = self.client
-        self.assertTrue(hasattr(client, "filter_droplets") == True)
-        self.assertNotIsInstance(client.droplets, NoneType)
-        self.assertIsInstance(client.droplets, list)
-        for droplet in client.droplets:
+        self.assertTrue(hasattr(self.client, "filter_droplets") == True)
+        self.assertNotIsInstance(self.client.droplets, NoneType)
+        self.assertIsInstance(self.client.droplets, list)
+        for droplet in self.client.droplets:
             self.assertIsInstance(droplet, Droplet)
 
     def test_invalid_client(self):
@@ -38,6 +36,7 @@ class DOClientTest(unittest.TestCase):
             self.assertRaises(APIAuthError)
 
     def test_domain_methods(self):
+        """Tests for domain create, list, get, and delete methods"""
         name = environ.get("test_domain_name")
         ip_address = environ.get("test_domain_ip")
         try:
