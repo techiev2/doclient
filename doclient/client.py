@@ -16,7 +16,7 @@ from time import mktime, gmtime
 import requests
 
 from .base import BaseObject
-from .droplet import Droplet, Kernel, Snapshot, Image, DropletSize
+from .droplet import Droplet, Kernel, Snapshot, Image, DropletSize, Domain
 from .errors import APIAuthError, InvalidArgumentError, APIError
 from .user import DOUser
 
@@ -220,7 +220,8 @@ class DOClient(BaseObject):
         :raises: APIAuthError
         """
         domains = self.api_request(url=self.domain_url, return_json=True)
-        return domains.get("domains", [])
+        domains = domains.get("domains", [])
+        return [Domain(**domain) for domain in domains]
 
     def get_images(self):
         """
