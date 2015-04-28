@@ -3,6 +3,8 @@
 __author__ = "Sriram Velamur<sriram.velamur@gmail.com>"
 __all__ = ("DOClient",)
 
+#pylint: disable=R0904,R0913,W0142
+
 import sys
 sys.dont_write_bytecode = True
 from json import dumps as json_dumps
@@ -133,6 +135,13 @@ class DOClient(BaseObject):
         return self._request_headers
 
     def add_request_headers(self, header_data):
+        """
+        Helper method to add additional request headers to DigitalOcean
+        API calls.
+        :param header_data: Header key, values to add to request.
+        :type  header_data: dict, tuple <len:2>
+        :rtype: NoneType
+        """
         is_valid_dict = isinstance(header_data, dict)
         is_valid_tuple = isinstance(header_data, tuple) \
             and len(header_data) == 2
@@ -140,9 +149,9 @@ class DOClient(BaseObject):
         if not passes:
             raise InvalidArgumentError(
                 "".join([
-                "Request header setter requires a ",
-                "dictionary or tuple of key/value"
-            ]))
+                    "Request header setter requires a ",
+                    "dictionary or tuple of key/value"
+                ]))
 
         if is_valid_dict:
             for key, value in header_data.iteritems():
@@ -261,9 +270,9 @@ class DOClient(BaseObject):
         """
         url = self.power_onoff_url % instance_id
         try:
-            response = self.api_request(url=url,
-                                        method="post",
-                                        data=self.poweroff_data)
+            self.api_request(url=url,
+                             method="post",
+                             data=self.poweroff_data)
             return {"message": "Initiated droplet poweroff"}
         except APIAuthError, error:
             return {"message": error.message}
@@ -277,9 +286,9 @@ class DOClient(BaseObject):
         """
         url = self.power_onoff_url % instance_id
         try:
-            response = self.api_request(url=url,
-                                        method="post",
-                                        data=self.poweron_data)
+            self.api_request(url=url,
+                             method="post",
+                             data=self.poweron_data)
             return {"message": "Initiated droplet poweron"}
         except APIAuthError, error:
             return {"message": error.message}
@@ -293,9 +302,9 @@ class DOClient(BaseObject):
         """
         url = self.power_onoff_url % instance_id
         try:
-            response = self.api_request(url=url,
-                                        method="post",
-                                        data=self.powercycle_data)
+            self.api_request(url=url,
+                             method="post",
+                             data=self.powercycle_data)
             return {"message": "Initiated droplet power cycle"}
         except APIAuthError, error:
             return {"message": error.message}
