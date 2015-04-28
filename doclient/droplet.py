@@ -198,7 +198,7 @@ class Domain(BaseObject):
             raise InvalidArgumentError("Invalid payload data")
         elif status == 500:
             raise APIError("DigitalOcean API error. Please try later.")
-        elif status != 201:
+        elif status != 200:
             message = response.json().get("message")
             raise InvalidArgumentError(message)
 
