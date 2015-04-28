@@ -21,7 +21,7 @@ class BaseError(BaseException):
             raise RuntimeError("Invalid invocation")
         message = args[0]
         prefix = getattr(self, "prefix", "GeneralError")
-        message = "DOClient::%s%s: " % (prefix, message)
+        message = "DOClient::%s %s: " % (prefix, message)
         args = (message,)
         super(BaseError, self).__init__(*args, **kwargs)
 
