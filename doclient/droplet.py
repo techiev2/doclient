@@ -206,6 +206,28 @@ class Domain(BaseObject):
 
     @classmethod
     @set_caller
+    def get_all(cls):
+        """
+        Get all domain maps generated through DigitalOcean's DNS.
+        :rtype: list<Domain>
+        """
+        response = cls.client.api_request(url=cls.base_url,
+                                         return_json=False)
+        status = response.status_code
+        if status in (401, 403):
+            raise APIAuthError("Invalid authentication bearer")
+        elif status == 400:
+            raise InvalidArgumentError("Invalid payload data")
+        elif status == 500:
+            raise APIError("DigitalOcean API error. Please try later.")
+        elif status != 200:
+            message = response.json().get("message")
+            raise InvalidArgumentError(message)
+        domains = response.json().get("domains", [])
+        return [Domain(**domain) for domain in domains]
+
+    @classmethod
+    @set_caller
     def delete(cls, name):
         """
         Domain mapping delete helper method
