@@ -27,6 +27,7 @@ class DOClient(BaseObject):
     api_quota_reset_at = None
     user = None
 
+    domain_url = "https://api.digitalocean.com/v2/domains"
     droplet_url = "".join([
         "https://api.digitalocean.com/v2/",
         "droplets?page=1&per_page=100"
@@ -203,6 +204,14 @@ class DOClient(BaseObject):
         self.api_quota_reset_at = reset_timestamp
 
         return response.json() if return_json else response
+
+    def get_domains(self):
+        """
+        Get list of images available in your DigitalOcean account.
+        :raises: APIAuthError
+        """
+        domains = self.api_request(url=self.domain_url, return_json=True)
+        return domains.get("domains", [])
 
     def get_images(self):
         """
