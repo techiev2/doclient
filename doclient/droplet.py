@@ -11,6 +11,8 @@ import sys
 sys.dont_write_bytecode = True
 
 from .base import BaseObject
+from .helpers import set_caller
+from .errors import InvalidArgumentError, APIAuthError, APIError
 
 
 class Droplet(BaseObject):
@@ -148,9 +150,57 @@ class Domain(BaseObject):
     """DigitalOcean droplet domain object"""
 
     name, ttl, zone_file = (None,) * 3
+    base_url = "https://api.digitalocean.com/v2/domains/"
 
     def __repr__(self):
         return "Domain %s" % self.name
 
     def __str__(self):
         return "Domain %s" % self.name
+
+    @classmethod
+    @set_caller
+    def create(cls, name, ip_address):
+        """Domain creation helper method"""
+        payload = {
+            "url": cls.base_url,
+            "method": "post",
+            "data": {
+                "name": name,
+                "ip_address": ip_address
+            },
+            "return_json": False
+        }
+        response = cls.client.api_request(**payload)
+        status = response.status_code
+        if status in (401, 403):
+            raise APIAuthError("Invalid authentication bearer")
+        elif status == 400:
+            raise InvalidArgumentError("Invalid payload data")
+        elif status == 500:
+            raise APIError("DigitalOcean API error. Please try later.")
+        elif status != 201:
+            message = response.json().get("message")
+            raise InvalidArgumentError(message)
+
+        return Domain(**response.json().get("domain"))
+
+    @classmethod
+    @set_caller
+    def get(cls, name):
+        """Domain information fetch helper method"""
+        url = "%s%s" % (cls.base_url, name)
+        print url, "<"
+        response = cls.client.api_request(url=url, return_json=False)
+        status = response.status_code
+        if status in (401, 403):
+            raise APIAuthError("Invalid authentication bearer")
+        elif status == 400:
+            raise InvalidArgumentError("Invalid payload data")
+        elif status == 500:
+            raise APIError("DigitalOcean API error. Please try later.")
+        elif status != 201:
+            message = response.json().get("message")
+            raise InvalidArgumentError(message)
+
+        return Domain(**response.json().get("domain"))
