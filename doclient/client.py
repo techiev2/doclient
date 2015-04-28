@@ -218,6 +218,39 @@ class DOClient(BaseObject):
 
         return response.json() if return_json else response
 
+    def get_domain(self, name):
+        """
+        Get information for a particular domain managed through
+        DigitalOcean's DNS interface
+        :param name: Domain name
+        :type  name: basestring
+        :rtype: dict
+        """
+        return Domain.get(name)
+
+    def create_domain(self, name, ip_address):
+        """
+        Create domain name mapping for domains managed through
+        DigitalOcean's DNS interface.
+        :param name: Domain name
+        :type  name: basestring
+        :param ip_address: IP address to map domain name to.
+        :type ip_address: basestring
+        :rtype: dict
+        """
+        try:
+            assert isinstance(name, basestring), \
+                "name needs to be a valid domain name string"
+            assert isinstance(ip_address, basestring), \
+                "ip_address needs to be a valid IPV4/IPV6 address"
+            domain = Domain.create(name, ip_address)
+            return {
+                "message": "Domain mapping created successfully",
+                "data": domain.as_json()
+            }
+        except AssertionError, error:
+            raise InvalidArgumentError(error)
+
     def get_domains(self):
         """
         Get list of images available in your DigitalOcean account.
