@@ -190,7 +190,6 @@ class Domain(BaseObject):
     def get(cls, name):
         """Domain information fetch helper method"""
         url = "%s%s" % (cls.base_url, name)
-        print url, "<"
         response = cls.client.api_request(url=url, return_json=False)
         status = response.status_code
         if status in (401, 403):
