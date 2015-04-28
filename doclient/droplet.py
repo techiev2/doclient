@@ -141,3 +141,16 @@ class DropletSize(BaseObject):
     def __str__(self):
         available = "Available" if self.available else "Not available"
         return "Size %s [%s]" % (self.slug, available)
+
+
+class Domain(BaseObject):
+
+    """DigitalOcean droplet domain object"""
+
+    name, ttl, zone_file = (None,) * 3
+
+    def __repr__(self):
+        return "Domain %s" % self.name
+
+    def __str__(self):
+        return "Domain %s" % self.name
