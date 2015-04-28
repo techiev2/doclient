@@ -194,7 +194,11 @@ class DOClient(BaseObject):
                 data = json_dumps(data)
             kwargs.update({"data": data})
 
-        response = http_method(**kwargs)
+        try:
+            response = http_method(**kwargs)
+        except requests.exceptions.ConnectionError:
+            raise NetworkError(
+                "No available network to connect to DigitalOcean API.")
 
         if response.status_code == 400:
             raise APIError("Invalid request data. Please check data")
