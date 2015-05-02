@@ -19,6 +19,8 @@ class Droplet(BaseObject):
 
     """DigitalOcean droplet object"""
 
+    __slots__ = ("client", "name")
+
     client, name = None, None
 
     def power_off(self):
