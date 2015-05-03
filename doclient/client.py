@@ -16,8 +16,8 @@ from time import mktime, gmtime
 import requests
 
 from .base import BaseObject
-from .droplet import Droplet, Kernel, Snapshot, Image, DropletSize
-from .meta import Domain
+from .droplet import Droplet, Image, DropletSize
+from .meta import Domain, Kernel, Snapshot
 from .errors import APIAuthError, InvalidArgumentError, APIError
 from .user import DOUser
 

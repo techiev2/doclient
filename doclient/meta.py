@@ -4,7 +4,7 @@ DigitalOcean APIv2 metadata module
 Exposes meta classes for meta informtaion.
 """
 __author__ = "Sriram Velamur <sriram.velamur@gmail.com>"
-__all__ = ("Domain",)
+__all__ = ("Domain", "Kernel", "Snapshot")
 
 import sys
 sys.dont_write_bytecode = True
@@ -120,3 +120,40 @@ class Domain(BaseObject):
         return {
             "message": "Successfully initiated domain mapping delete"
         }
+
+
+class Kernel(BaseObject):
+
+    """DigitalOcean droplet kernel object"""
+
+    version, name = None, None
+
+    def __repr__(self):
+        return "Kernel %s [Name: %s | Version: %s]" % (
+            self.id, self.name, self.version)
+
+    def __str__(self):
+        return "Kernel %s [Name: %s | Version: %s]" % (
+            self.id, self.name, self.version)
+
+
+class Snapshot(BaseObject):
+
+    """DigitalOcean droplet snapshot object"""
+
+    droplet, _id, name, distribution, public = (None,) * 5
+    regions, created_at = None, None
+    _type, min_disk_size = None, None
+
+    @property
+    def type(self):
+        """Droplet snapshot type property"""
+        return self._type
+
+    def __repr__(self):
+        return "Snapshot %s [%s] of droplet %s. Running %s" % \
+            (self.id, self.name, self.droplet, self.distribution)
+
+    def __str__(self):
+        return "Snapshot %s [%s] of droplet %s. Running %s" % \
+            (self.id, self.name, self.droplet, self.distribution)
