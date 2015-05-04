@@ -10,6 +10,7 @@ import sys
 sys.dont_write_bytecode = True
 
 from .base import BaseObject
+from .helpers import set_caller
 
 
 class Domain(BaseObject):
