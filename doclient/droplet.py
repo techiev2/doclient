@@ -23,6 +23,12 @@ class Droplet(BaseObject):
 
     client, name = None, None
 
+    droplet_base_url = "https://api.digitalocean.com/v2/droplets/"
+    droplet_snapshot_url = "".join([
+        droplet_base_url,
+        "%s/snapshots?page=1&per_page=100"
+    ])
+
     def power_off(self):
         """Droplet power off helper method"""
         print "Powering off droplet %s" % self.name
@@ -80,7 +86,16 @@ class Droplet(BaseObject):
         """
         return self.client.delete_droplet(self.id)
 
-
+    def get_snapshots(self):
+        """
+        DigitalOcean droplet snapshot list helper.
+        Returns a list of snapshots for a particular droplet.
+        :rtype: list<Snapshot>
+        """
+        url = self.droplet_snapshot_url % self.id
+        response = self.client.api_request(url=url, return_json=True)
+        snapshots = response.get("snapshots")
+        return [Snapshot(**snapshot) for snapshot in snapshots]
 
 
 class Image(BaseObject):

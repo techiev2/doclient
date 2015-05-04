@@ -407,10 +407,10 @@ class DOClient(BaseObject):
         :type  droplet_id: int
         :rtype: list<dict>
         """
-        url = self.droplet_snapshot_url % droplet_id
-        response = self.api_request(url=url)
-        snapshots = response.get("snapshots")
-        return [Snapshot(**snapshot) for snapshot in snapshots]
+        droplet = self.get_droplet(droplet_id)
+        if not droplet:
+            raise InvalidArgumentError("Droplet not found")
+        return droplet.get_snapshots()
 
     def get_droplet_kernels(self, droplet_id):
         """
