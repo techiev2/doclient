@@ -63,6 +63,10 @@ class DOClientTest(unittest.TestCase):
         self.assertIsInstance(snapshots, list)
         for snapshot in snapshots:
             self.assertIsInstance(snapshot, Snapshot)
+        neighbours = droplet.get_neighbours()
+        self.assertIsInstance(neighbours, list)
+        for neighbour in neighbours:
+            self.assertIsInstance(neighbour, Droplet)
 
 
 
