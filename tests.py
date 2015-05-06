@@ -6,9 +6,9 @@ from os import environ
 import unittest
 from types import NoneType
 
-from doclient import DOClient, APIAuthError, Droplet
-from doclient.droplet import Domain
+from doclient import DOClient, Droplet
 from doclient.errors import InvalidArgumentError, APIAuthError, APIError
+from doclient.meta import Domain, Snapshot
 
 
 class DOClientTest(unittest.TestCase):
@@ -54,6 +54,16 @@ class DOClientTest(unittest.TestCase):
         except BaseException, error:
             self.assertIsInstance(error,
                 (APIAuthError, APIError, InvalidArgumentError))
+
+    def test_droplet_methods(self):
+        """Test droplet functionalities"""
+        droplet = self.client.filter_droplets("f")[0]
+        self.assertIsInstance(droplet, Droplet)
+        snapshots = droplet.get_snapshots()
+        self.assertIsInstance(snapshots, list)
+        for snapshot in snapshots:
+            self.assertIsInstance(snapshot, Snapshot)
+
 
 
 if __name__ == "__main__":
