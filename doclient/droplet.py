@@ -28,6 +28,10 @@ class Droplet(BaseObject):
         droplet_base_url,
         "%s/snapshots?page=1&per_page=100"
     ])
+    droplet_neighbours_url = "".join([
+        droplet_base_url,
+        "%s/neighbors"
+    ])
 
     def power_off(self):
         """Droplet power off helper method"""
@@ -64,11 +68,14 @@ class Droplet(BaseObject):
 
     def get_neighbours(self):
         """
-        DigitalOcean droplet neighbours helper.
+        DigitalOcean APIv2 droplet neighbours helper method.
         Returns a list of droplets running on the same physical server.
         :rtype: list<doclient.droplet.Droplet>
         """
-        return self.client.get_droplet_neighbours(self.id)
+        url = self.droplet_neighbours_url % self.id
+        response = self.client.api_request(url=url)
+        droplets = response.get("droplets")
+        return [Droplet(**droplet) for droplet in droplets]
 
     def delete(self):
         """

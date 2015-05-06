@@ -425,19 +425,6 @@ class DOClient(BaseObject):
         kernels = response.get("kernels")
         return [Kernel(**kernel) for kernel in kernels]
 
-    def get_droplet_neighbours(self, droplet_id):
-        """
-        DigitalOcean APIv2 droplet neighbours helper method.
-        Returns a list of droplets running on the same physical server.
-        :param droplet_id: ID of droplet to get neighbours for.
-        :type  droplet_id: int
-        :rtype: list<doclient.droplet.Droplet>
-        """
-        url = self.droplet_neighbours_url % droplet_id
-        response = self.api_request(url=url)
-        droplets = response.get("droplets")
-        return [Droplet(**droplet) for droplet in droplets]
-
     def delete_droplet(self, droplet_id):
         """
         DigitalOcean APIv2 droplet delete method.
