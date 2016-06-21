@@ -20,6 +20,8 @@ class BaseObject(object):
 
     def __init__(self, **kwargs):
         """BaseObject class init"""
+        if not self.props:
+            self.props = []
         for name, value in kwargs.iteritems():
             if name in ("id", "token"):
                 name = "_%s" % name
