@@ -98,6 +98,7 @@ class DOClient(BaseObject):
         }
         self.get_droplets()
         self.get_user_information()
+        self.get_ssh_keys()
 
     def get_user_information(self):
         """DigitalOcean APIv2 user information helper method"""
