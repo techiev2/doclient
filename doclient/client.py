@@ -551,7 +551,7 @@ class DOClient(BaseObject):
         try:
             assert isinstance(names, list), \
                 "Invalid droplet name. Requires a list of strings"
-            assert all([isinstance(name, x), for x in names]), \
+            assert all([isinstance(x, basestring) for x in names]), \
                 "One or more invalid droplet names. Requires a string name"
             assert isinstance(region, basestring), \
                 "Invalid droplet region. Requires a string region id"
