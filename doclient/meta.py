@@ -175,3 +175,16 @@ class Region(BaseObject):
         return "Region %s {%s - %s}" % \
             (self.name, self.slug,
                 "Available" if self.available else "Unavailable")
+
+
+class SSHKey(BaseObject):
+
+    """SSH key object associated with a DigitalOcean account"""
+
+    fingerprint, name, public_key = None, None, None
+
+    def __repr__(self):
+        return "SSH Key %s {%s}" % (self.name, self.fingerprint)
+
+    def __str__(self):
+        return "SSH Key %s {%s}" % (self.name, self.fingerprint)
