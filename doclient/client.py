@@ -521,6 +521,79 @@ class DOClient(BaseObject):
         except AssertionError, err:
             raise InvalidArgumentError(err)
 
+    def create_droplets(self, names, region, size, image,
+                       ssh_keys=None, backups=False, ipv6=False,
+                       user_data=None, private_networking=False):
+        """
+        DigitalOcean APIv2 droplet create method.
+        Creates a droplet with requested payload features.
+        :param names: Identifiers for createddroplet.
+        :type  names: list<basestring>
+        :param region: Region identifier to spawn droplet
+        :type  region: basestring
+        :param size: Size of droplet to create.
+                     [512mb, 1gb, 2gb, 4gb, 8gb, 16gb, 32gb, 48gb, 64gb]
+        :type  size: basestring
+        :param image: Name or slug identifier of base image to use.
+        :type  image: int, basestring
+        :param ssh_keys: SSH keys to add to created droplet
+        :type  ssh_keys: list<basestring>, list<long>
+        :param backups: Droplet backups enable state parameter
+        :type  backups: bool
+        :param ipv6: Droplet IPV6 enable state parameter
+        :type  ipv6: bool
+        :param user_data: User data to be added to droplet's metadata
+        :type  user_data: basestring
+        :param private_networking: Droplet private networking enable parameter
+        :type  private_networking: bool
+        :rtype: doclient.droplet.Droplet
+        """
+        try:
+            assert isinstance(names, list), \
+                "Invalid droplet name. Requires a list of strings"
+            assert all([isinstance(name, x), for x in names]) \
+                "One or more invalid droplet names. Requires a string name"
+            assert isinstance(region, basestring), \
+                "Invalid droplet region. Requires a string region id"
+            assert isinstance(size, basestring), \
+                "Invalid droplet size. Requires a string size"
+            assert isinstance(image, (int, long, basestring)), \
+                "Invalid base image id. Requires a numeric ID or slug"
+            backups = backups if isinstance(backups, bool) else False
+            private_networking = private_networking if \
+                isinstance(private_networking, bool) else False
+            ipv6 = ipv6 if isinstance(ipv6, bool) else False
+            user_data = user_data if \
+                isinstance(user_data, basestring) else None
+            ssh_keys = ssh_keys if isinstance(ssh_keys, list) and \
+                all([isinstance(x, (int, long, basestring))
+                     for x in ssh_keys]) else False
+            payload = json_dumps({
+                "names": names,
+                "region": region,
+                "size": size,
+                "image": image,
+                "ssh_keys": ssh_keys,
+                "backups": backups,
+                "private_networking": private_networking,
+                "ipv6": ipv6,
+                "user_data": user_data,
+            })
+            response = self.api_request(url=self.droplet_base_url,
+                                        data=payload,
+                                        return_json=False)
+
+            if response.status_code != 202:
+                raise APIError(
+                    "Unable to create a droplet with requested data")
+
+            droplet = response.json().get("droplet")
+            return Droplet(**droplet)
+
+        except AssertionError, err:
+            raise InvalidArgumentError(err)
+
+
 
 if __name__ == "__main__":
     pass
