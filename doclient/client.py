@@ -17,7 +17,7 @@ import requests
 
 from .base import BaseObject
 from .droplet import Droplet, Image, DropletSize
-from .meta import Domain, Kernel, Snapshot, Region
+from .meta import Domain, Kernel, Snapshot, Region, SSHKey
 from .errors import APIAuthError, InvalidArgumentError, APIError
 from .user import DOUser
 
@@ -51,6 +51,7 @@ class DOClient(BaseObject):
     regions_url = "https://api.digitalocean.com/v2/regions"
 
     userinfo_url = "https://api.digitalocean.com/v2/account"
+    keys_url = userinfo_url + "/keys"
 
     droplet_base_url = "https://api.digitalocean.com/v2/droplets/"
     droplet_snapshot_url = "".join([
@@ -65,6 +66,8 @@ class DOClient(BaseObject):
         droplet_base_url,
         "%s/neighbors"
     ])
+
+    ssh_keys = []
 
     # Metadata
 
@@ -113,6 +116,22 @@ class DOClient(BaseObject):
         user = DOUser(**payload)
         self.user = user
         return user
+
+
+    def get_ssh_keys(self):
+        """
+        Helper method to retrieve the list of SSH keys associated
+        with a DigitalOcean user account.
+        """
+        response = self.api_request(
+            url=self.keys_url, return_json=True)
+
+        keys = response.get("ssh_keys", [])
+        for key in keys:
+            key_object = SSHKey(**key)
+            self.ssh_keys.append(key_object)
+
+        return self.ssh_keys
 
     def __repr__(self):
         return "DigitalOcean API Client %s" % self._id
