@@ -17,7 +17,7 @@ import requests
 
 from .base import BaseObject
 from .droplet import Droplet, Image, DropletSize
-from .meta import Domain, Kernel, Snapshot
+from .meta import Domain, Kernel, Snapshot, Region
 from .errors import APIAuthError, InvalidArgumentError, APIError
 from .user import DOUser
 
@@ -47,6 +47,8 @@ class DOClient(BaseObject):
         "https://api.digitalocean.com/v2/",
         "droplets/%s/actions"
     ])
+
+    regions_url = "https://api.digitalocean.com/v2/regions"
 
     userinfo_url = "https://api.digitalocean.com/v2/account"
 
@@ -592,6 +594,28 @@ class DOClient(BaseObject):
 
         except AssertionError, err:
             raise InvalidArgumentError(err)
+
+
+    def get_regions(self):
+        """
+        DigitalOcean APIv2 region list method.
+        Returns a list of regions available.
+        :TODO: Add way to filter regions with pattern/features.
+        """
+        response = self.api_request(url=self.regions_url)
+        regions = response.get("regions", [])
+        region_objects = []
+        for region in regions:
+            _region = Region(**{
+                "name": region.get("name"),
+                "slug": region.get("slug"),
+                "features": region.get("features", []),
+                "sizes": region.get("sizes", []),
+                "available": region.get("available", False)
+            })
+            region_objects.append(_region)
+
+        return region_objects
 
 
 
