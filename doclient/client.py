@@ -607,16 +607,25 @@ class DOClient(BaseObject):
                 "ipv6": ipv6,
                 "user_data": user_data,
             })
-            response = self.api_request(url=self.droplet_base_url,
-                                        data=payload,
-                                        return_json=False)
+
+            params = {
+                "url": self.droplet_base_url,
+                "method": "POST",
+                "data": payload,
+                "return_json": False
+            }
+
+            response = self.api_request(**params)
 
             if response.status_code != 202:
                 raise APIError(
                     "Unable to create a droplet with requested data")
 
-            droplet = response.json().get("droplet")
-            return Droplet(**droplet)
+            droplets = response.json().get("droplets", [])
+            _droplets = []
+            for droplet in droplets:
+                _droplets.append(Droplet(**droplet))
+            return _droplets
 
         except AssertionError, err:
             raise InvalidArgumentError(err)
