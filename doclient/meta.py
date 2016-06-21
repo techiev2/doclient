@@ -158,3 +158,20 @@ class Snapshot(BaseObject):
     def __str__(self):
         return "Snapshot %s [%s] of droplet %s. Running %s" % \
             (self.id, self.name, self.droplet, self.distribution)
+
+
+class Region(BaseObject):
+
+    """DigitalOcean region object class"""
+
+    available, sizes, features, name, slug = (None,) * 5
+
+    def __repr__(self):
+        return "Region %s {%s - %s}" % \
+            (self.name, self.slug,
+                "Available" if self.available else "Unavailable")
+
+    def __str__(self):
+        return "Region %s {%s - %s}" % \
+            (self.name, self.slug,
+                "Available" if self.available else "Unavailable")
