@@ -413,13 +413,22 @@ class DOClient(BaseObject):
         if matcher is None:
             return self.droplets
 
-        if not isinstance(matcher, basestring):
+        if not isinstance(matcher, (int, basestring)):
             raise InvalidArgumentError(
-                "Method requires a string filter token")
+                "Method requires a string filter token or droplet ID")
 
-        matcher = re_compile(".*?%s.*?" % matcher)
-        return [x for x in self.droplets
-                if re_match(matcher, x.name) is not None]
+        if isinstance(matcher, int):
+            return [x for x in self.droplets if x.id == matcher]
+
+        # See if a Droplet ID is passed in (an integer) and filter
+        # based on ID.
+        try:
+            _id = literal_eval(matcher)
+            return [x for x in self.droplets if x.id == _id]
+        except (TypeError, ValueError):
+            matcher = re_compile(".*?%s.*?" % matcher)
+            return [x for x in self.droplets
+                    if re_match(matcher, x.name) is not None]
 
     def get_droplet_snapshots(self, droplet_id):
         """
