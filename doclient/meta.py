@@ -79,8 +79,8 @@ class Domain(BaseObject):
         Get all domain maps generated through DigitalOcean's DNS.
         :rtype: list<Domain>
         """
-        response = cls.client.api_request(url=cls.base_url,
-                                         return_json=False)
+        response = cls.client.api_request(
+            url=cls.base_url, return_json=False)
         status = response.status_code
         if status in (401, 403):
             raise APIAuthError("Invalid authentication bearer")

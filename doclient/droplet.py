@@ -11,8 +11,6 @@ import sys
 sys.dont_write_bytecode = True
 
 from .base import BaseObject
-from .helpers import set_caller
-from .errors import InvalidArgumentError, APIAuthError, APIError
 
 
 class Droplet(BaseObject):
@@ -125,4 +123,3 @@ class DropletSize(BaseObject):
     def __str__(self):
         available = "Available" if self.available else "Not available"
         return "Size %s [%s]" % (self.slug, available)
-
