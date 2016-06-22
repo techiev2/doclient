@@ -19,9 +19,10 @@ class Droplet(BaseObject):
 
     """DigitalOcean droplet object"""
 
-    __slots__ = ("client", "name")
+    __slots__ = ("client", "name", "ipv4_ip", "ipv6_ip", "networks")
 
-    client, name = None, None
+    client, name, ipv4_ip, ipv6_ip = (None,) * 4
+    networks = []
 
     droplet_base_url = "https://api.digitalocean.com/v2/droplets/"
     droplet_snapshot_url = "".join([

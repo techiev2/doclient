@@ -17,7 +17,8 @@ import requests
 
 from .base import BaseObject
 from .droplet import Droplet, Image, DropletSize
-from .meta import Domain, Kernel, Snapshot, Region, SSHKey
+from .meta import Domain, Kernel, Snapshot, \
+    Region, SSHKey, DropletNetwork
 from .errors import APIAuthError, InvalidArgumentError, APIError
 from .user import DOUser
 
@@ -68,6 +69,7 @@ class DOClient(BaseObject):
     ])
 
     ssh_keys = []
+    networks = []
 
     # Metadata
 
@@ -319,10 +321,54 @@ class DOClient(BaseObject):
         _droplets = []
 
         for droplet in droplets:
+
+            droplet_networks = droplet.get("networks", {})
+            v4_networks = droplet_networks.get("v4", [])
+            v6_networks = droplet_networks.get("v6", [])
+            droplet_network_objects = []
+            droplet_ipv4_ip, droplet_ipv6_ip = None, None
+
+            for idx, v4_network in enumerate(v4_networks):
+                ip = v4_network.get("ip_address")
+                netmask = v4_network.get("netmask")
+                gateway = v4_network.get("gateway")
+                is_public = v4_network.get("type") == "public"
+                network_type = "ipv4"
+                network = DropletNetwork(**{
+                    "ip_address": ip,
+                    "netmask": netmask,
+                    "gateway": gateway,
+                    "is_public": is_public,
+                    "network_type": network_type
+                })
+                droplet_network_objects.append(network)
+                if is_public:
+                    droplet_ipv4_ip = ip
+
+            for idx, v6_network in enumerate(v6_networks):
+                ip = v6_network.get("ip_address")
+                netmask = v6_network.get("netmask")
+                gateway = v6_network.get("gateway")
+                is_public = v6_network.get("type") == "public"
+                network_type = "ipv6"
+                network = DropletNetwork(**{
+                    "ip_address": ip,
+                    "netmask": netmask,
+                    "gateway": gateway,
+                    "is_public": is_public,
+                    "network_type": network_type
+                })
+                droplet_network_objects.append(network)
+                if is_public:
+                    droplet_ipv6_ip = ip
+
             droplet = Droplet(**{
                 "name": droplet.get("name"),
                 "_id": droplet.get("id"),
-                "client": self
+                "client": self,
+                "networks": droplet_network_objects,
+                "ipv4_ip": droplet_ipv4_ip,
+                "ipv6_ip": droplet_ipv6_ip
             })
             _droplets.append(droplet)
 
@@ -639,7 +685,6 @@ class DOClient(BaseObject):
         except AssertionError, err:
             raise InvalidArgumentError(err)
 
-
     def get_regions(self):
         """
         DigitalOcean APIv2 region list method.
@@ -660,7 +705,6 @@ class DOClient(BaseObject):
             region_objects.append(_region)
 
         return region_objects
-
 
 
 if __name__ == "__main__":
