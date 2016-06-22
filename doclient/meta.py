@@ -188,3 +188,12 @@ class SSHKey(BaseObject):
 
     def __str__(self):
         return "SSH Key %s {%s}" % (self.name, self.fingerprint)
+
+
+class DropletNetwork(BaseObject):
+
+    """DigitalOcean droplet network object"""
+
+    network_type, netmask, ip_address,\
+        gateway, is_public = (None,) * 5
+
