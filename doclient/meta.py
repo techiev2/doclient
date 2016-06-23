@@ -1,8 +1,10 @@
 #! coding=utf-8
 """
-DigitalOcean APIv2 metadata module
+DigitalOcean APIv2 metadata module.
 Exposes meta classes for meta informtaion.
 """
+
+
 __author__ = "Sriram Velamur <sriram.velamur@gmail.com>"
 __all__ = ("Domain", "Kernel", "Snapshot")
 
@@ -11,6 +13,7 @@ sys.dont_write_bytecode = True
 
 from .base import BaseObject
 from .helpers import set_caller
+from .errors import APIAuthError, InvalidArgumentError, APIError
 
 
 class Domain(BaseObject):
@@ -21,10 +24,10 @@ class Domain(BaseObject):
     base_url = "https://api.digitalocean.com/v2/domains/"
 
     def __repr__(self):
-        return "Domain %s" % self.name
+        return "Domain {0}".format(self.name)
 
     def __str__(self):
-        return "Domain %s" % self.name
+        return "Domain {0}".format(self.name)
 
     @classmethod
     @set_caller
@@ -46,7 +49,8 @@ class Domain(BaseObject):
         elif status == 400:
             raise InvalidArgumentError("Invalid payload data")
         elif status == 500:
-            raise APIError("DigitalOcean API error. Please try later.")
+            raise APIError(
+                "DigitalOcean API error. Please try later.")
         elif status != 201:
             message = response.json().get("message")
             raise InvalidArgumentError(message)
@@ -65,7 +69,8 @@ class Domain(BaseObject):
         elif status == 400:
             raise InvalidArgumentError("Invalid payload data")
         elif status == 500:
-            raise APIError("DigitalOcean API error. Please try later.")
+            raise APIError(
+                "DigitalOcean API error. Please try later.")
         elif status != 200:
             message = response.json().get("message")
             raise InvalidArgumentError(message)
@@ -87,7 +92,8 @@ class Domain(BaseObject):
         elif status == 400:
             raise InvalidArgumentError("Invalid payload data")
         elif status == 500:
-            raise APIError("DigitalOcean API error. Please try later.")
+            raise APIError(
+                "DigitalOcean API error. Please try later.")
         elif status != 200:
             message = response.json().get("message")
             raise InvalidArgumentError(message)
@@ -113,7 +119,8 @@ class Domain(BaseObject):
         elif status == 400:
             raise InvalidArgumentError("Invalid payload data")
         elif status == 500:
-            raise APIError("DigitalOcean API error. Please try later.")
+            raise APIError(
+                "DigitalOcean API error. Please try later.")
         elif status != 204:
             message = response.json().get("message")
             raise InvalidArgumentError(message)
@@ -130,11 +137,11 @@ class Kernel(BaseObject):
     version, name = None, None
 
     def __repr__(self):
-        return "Kernel %s [Name: %s | Version: %s]" % (
+        return "Kernel {0} [Name: {1} | Version: {2}]".format(
             self.id, self.name, self.version)
 
     def __str__(self):
-        return "Kernel %s [Name: %s | Version: %s]" % (
+        return "Kernel {0} [Name: {1} | Version: {2}]".format(
             self.id, self.name, self.version)
 
 
@@ -152,12 +159,14 @@ class Snapshot(BaseObject):
         return self._type
 
     def __repr__(self):
-        return "Snapshot %s [%s] of droplet %s. Running %s" % \
-            (self.id, self.name, self.droplet, self.distribution)
+        return\
+            "Snapshot {0} [{1}] of droplet {2}. Running {3}".format(
+                (self.id, self.name, self.droplet, self.distribution))
 
     def __str__(self):
-        return "Snapshot %s [%s] of droplet %s. Running %s" % \
-            (self.id, self.name, self.droplet, self.distribution)
+        return \
+            "Snapshot {0} [{1}] of droplet {2}. Running {3}".format(
+                (self.id, self.name, self.droplet, self.distribution))
 
 
 class Region(BaseObject):
