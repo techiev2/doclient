@@ -100,6 +100,7 @@ class DOClient(BaseObject):
         }
         self.get_droplets()
         self.get_user_information()
+        self._id = self.user.uuid
         self.get_ssh_keys()
 
     def get_user_information(self):
