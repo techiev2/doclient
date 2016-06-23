@@ -618,6 +618,7 @@ class DOClient(BaseObject):
 
             droplet = response.json().get("droplet")
             droplet["client"] = self
+            self.get_droplets()
             return Droplet(**droplet)
 
         except AssertionError, err:
@@ -704,6 +705,8 @@ class DOClient(BaseObject):
             for droplet in droplets:
                 droplet["client"] = self
                 _droplets.append(Droplet(**droplet))
+
+            self.get_droplets()
             return _droplets
 
         except AssertionError, err:
