@@ -19,7 +19,8 @@ from .base import BaseObject
 from .droplet import Droplet, Image, DropletSize
 from .meta import Domain, Kernel, Snapshot, \
     Region, SSHKey, DropletNetwork
-from .errors import APIAuthError, InvalidArgumentError, APIError
+from .errors import APIAuthError, InvalidArgumentError, \
+    APIError, NetworkError
 from .user import DOUser
 
 

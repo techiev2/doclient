@@ -1,7 +1,8 @@
 #! coding=utf-8
 """DigitalOcean APIv2 client errors module"""
 __author__ = "Sriram Velamur<sriram.velamur@gmail.com>"
-__all__ = ("APIAuthError", "InvalidArgumentError", "APIError")
+__all__ = ("APIAuthError", "InvalidArgumentError",
+           "APIError", "NetworkError")
 
 import sys
 sys.dont_write_bytecode = True
@@ -54,3 +55,13 @@ class APIError(BaseError):
     """
 
     prefix = "APIError"
+
+
+class NetworkError(BaseError):
+    """
+    DigitalOcean APIv2 client fallback network error class.
+    Raised when requests library encounters a network error
+    while attempting to contact the DigitalOcean API.
+    """
+
+    prefix = "NetworkError"
