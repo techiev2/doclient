@@ -17,9 +17,9 @@ class DOUser(BaseObject):
         droplet_limit, uuid, email = (None,) * 5
 
     def __repr__(self):
-        return "DigitalOcean User: {0} ({1})".format(
+        return "DigitalOcean User: {0} [{1}]".format(
             self.uuid, self.email)
 
     def __str__(self):
-        return "DigitalOcean User: {0} ({1})".format(
+        return "DigitalOcean User: {0} [{1}]".format(
             self.uuid, self.email)

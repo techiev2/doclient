@@ -50,10 +50,10 @@ class Droplet(BaseObject):
         self.client.powercycle_droplet(self.id)
 
     def __repr__(self):
-        return "Droplet {0} <ID: {1}>".format(self.name, self.id)
+        return "Droplet {0} [ID: {1}]".format(self.name, self.id)
 
     def __str__(self):
-        return "Droplet {0} <ID: {1}>".format(self.name, self.id)
+        return "Droplet {0} [ID: {1}]".format(self.name, self.id)
 
     def as_dict(self):
         """Returns a dictionary representation of a Droplet"""

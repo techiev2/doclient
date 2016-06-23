@@ -158,14 +158,14 @@ class Snapshot(BaseObject):
         return self._type
 
     def __repr__(self):
-        return\
+        return \
             "Snapshot {0} [{1}] of droplet {2}. Running {3}".format(
-                (self.id, self.name, self.droplet, self.distribution))
+                self.id, self.name, self.droplet, self.distribution)
 
     def __str__(self):
         return \
             "Snapshot {0} [{1}] of droplet {2}. Running {3}".format(
-                (self.id, self.name, self.droplet, self.distribution))
+                self.id, self.name, self.droplet, self.distribution)
 
 
 class Region(BaseObject):
@@ -175,12 +175,12 @@ class Region(BaseObject):
     available, sizes, features, name, slug = (None,) * 5
 
     def __repr__(self):
-        return "Region {0} { {1} - {2} }" .format(
+        return "Region {0} [{1} - {2}]" .format(
             self.name, self.slug,
             "Available" if self.available else "Unavailable")
 
     def __str__(self):
-        return "Region {0} { {1} - {2} }".format(
+        return "Region {0} [{1} - {2}]".format(
             self.name, self.slug,
             "Available" if self.available else "Unavailable")
 
@@ -192,12 +192,10 @@ class SSHKey(BaseObject):
     fingerprint, name, public_key = None, None, None
 
     def __repr__(self):
-        return "SSH Key {0} { {1} }".format(
-            self.name, self.fingerprint)
+        return "SSH Key {0} [{1}]".format(self.name, self.fingerprint)
 
     def __str__(self):
-        return "SSH Key {0} { {1} }".format(
-            self.name, self.fingerprint)
+        return "SSH Key {0} [{1}]".format(self.name, self.fingerprint)
 
 
 class DropletNetwork(BaseObject):
