@@ -588,8 +588,8 @@ class DOClient(BaseObject):
             user_data = user_data if \
                 isinstance(user_data, basestring) else None
             ssh_keys = ssh_keys if isinstance(ssh_keys, list) and \
-                all([isinstance(x, (int, long, basestring))
-                     for x in ssh_keys]) else False
+                all((isinstance(x, (int, long, basestring))
+                     for x in ssh_keys)) else False
             payload = json_dumps({
                 "name": name,
                 "region": region,
@@ -654,7 +654,7 @@ class DOClient(BaseObject):
         try:
             assert isinstance(names, list), \
                 "Invalid droplet name. Requires a list of strings"
-            assert all([isinstance(x, basestring) for x in names]), \
+            assert all((isinstance(x, basestring) for x in names)), \
                 "".join(["One or more invalid droplet names."
                         "Requires a string name"])
             assert isinstance(region, basestring), \
@@ -670,8 +670,8 @@ class DOClient(BaseObject):
             user_data = user_data if \
                 isinstance(user_data, basestring) else None
             ssh_keys = ssh_keys if isinstance(ssh_keys, list) and \
-                all([isinstance(x, (int, long, basestring))
-                     for x in ssh_keys]) else False
+                all((isinstance(x, (int, long, basestring))
+                     for x in ssh_keys)) else False
             payload = json_dumps({
                 "names": names,
                 "region": region,
