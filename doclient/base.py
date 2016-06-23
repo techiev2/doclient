@@ -24,7 +24,7 @@ class BaseObject(object):
             self.props = []
         for name, value in kwargs.iteritems():
             if name in ("id", "token"):
-                name = "_%s" % name
+                name = "_{}".format(name)
             setattr(self, name, value)
             if name not in self.props:
                 self.props.append(name)

@@ -4,6 +4,7 @@ DigitalOcean APIv2 droplet module.
 Provides interface classes to Droplets, Kernels,
 Snapshots, Images, and Sizes
 """
+
 __author__ = "Sriram Velamur<sriram.velamur@gmail.com>"
 __all__ = ("Droplet", "Image", "DropletSize")
 
@@ -11,6 +12,7 @@ import sys
 sys.dont_write_bytecode = True
 
 from .base import BaseObject
+from .meta import Snapshot
 
 
 class Droplet(BaseObject):
@@ -68,7 +70,8 @@ class Droplet(BaseObject):
     def get_neighbours(self):
         """
         DigitalOcean APIv2 droplet neighbours helper method.
-        Returns a list of droplets running on the same physical server.
+        Returns a list of droplets running
+        on the same physical server.
         :rtype: list<doclient.droplet.Droplet>
         """
         url = self.droplet_neighbours_url % self.id
@@ -103,10 +106,10 @@ class Image(BaseObject):
     min_disk_size, slug, name, _id, regions = (None,) * 5
 
     def __repr__(self):
-        return "Image %s [%s]" % (self.id, self.name)
+        return "Image {0} [{1}]".format(self.id, self.name)
 
     def __str__(self):
-        return "Image %s [%s]" % (self.id, self.name)
+        return "Image {0} [{1}]".format(self.id, self.name)
 
 
 class DropletSize(BaseObject):
@@ -118,8 +121,8 @@ class DropletSize(BaseObject):
 
     def __repr__(self):
         available = "Available" if self.available else "Not available"
-        return "Size %s [%s]" % (self.slug, available)
+        return "Size {0} [{1}]".format(self.slug, available)
 
     def __str__(self):
         available = "Available" if self.available else "Not available"
-        return "Size %s [%s]" % (self.slug, available)
+        return "Size {0} [{1}]".format(self.slug, available)

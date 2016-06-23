@@ -61,7 +61,7 @@ class Domain(BaseObject):
     @set_caller
     def get(cls, name):
         """Domain information fetch helper method"""
-        url = "%s%s" % (cls.base_url, name)
+        url = "{0}{1}".format(cls.base_url, name)
         response = cls.client.api_request(url=url, return_json=False)
         status = response.status_code
         if status in (401, 403):

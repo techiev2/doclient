@@ -121,7 +121,6 @@ class DOClient(BaseObject):
         self.user = user
         return user
 
-
     def get_ssh_keys(self):
         """
         Helper method to retrieve the list of SSH keys associated
@@ -487,7 +486,7 @@ class DOClient(BaseObject):
             _id = literal_eval(matcher)
             return [x for x in self.droplets if x.id == _id]
         except (TypeError, ValueError):
-            matcher = re_compile(".*?%s.*?" % matcher)
+            matcher = re_compile(".*?{0}.*?".format(matcher))
             return [x for x in self.droplets
                     if re_match(matcher, x.name) is not None]
 
