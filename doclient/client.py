@@ -527,7 +527,7 @@ class DOClient(BaseObject):
         droplet = self.get_droplet(droplet_id)
         if not droplet:
             raise InvalidArgumentError("Unknown droplet")
-        url = "%s%s" % (self.droplet_base_url, droplet_id)
+        url = "{0}{1}".format(self.droplet_base_url, droplet_id)
         try:
             self.api_request(url=url,
                              method="delete",

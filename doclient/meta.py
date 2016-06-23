@@ -109,10 +109,9 @@ class Domain(BaseObject):
         :type  name: basestring
         :rtype: dict
         """
-        url = "%s%s" % (cls.base_url, name)
-        response = cls.client.api_request(url=url,
-                                          method="delete",
-                                          return_json=False)
+        url = "{0}{1}".format(cls.base_url, name)
+        response = cls.client.api_request(
+            url=url, method="delete", return_json=False)
         status = response.status_code
         if status in (401, 403):
             raise APIAuthError("Invalid authentication bearer")

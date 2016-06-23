@@ -31,29 +31,29 @@ class Droplet(BaseObject):
     ])
     droplet_neighbours_url = "".join([
         droplet_base_url,
-        "%s/neighbors"
+        "{0}/neighbors"
     ])
 
     def power_off(self):
         """Droplet power off helper method"""
-        print "Powering off droplet %s" % self.name
+        print "Powering off droplet {0}".format(self.name)
         self.client.poweroff_droplet(self.id)
 
     def power_on(self):
         """Droplet power on helper method"""
-        print "Powering on droplet %s" % self.name
+        print "Powering on droplet {0}".format(self.name)
         self.client.poweron_droplet(self.id)
 
     def power_cycle(self):
         """Droplet power cycle helper method"""
-        print "Power cycling droplet %s" % self.name
+        print "Power cycling droplet {0}".format(self.name)
         self.client.powercycle_droplet(self.id)
 
     def __repr__(self):
-        return "Droplet %s <ID: %s>" % (self.name, self.id)
+        return "Droplet {0} <ID: {1}>".format(self.name, self.id)
 
     def __str__(self):
-        return "Droplet %s <ID: %s>" % (self.name, self.id)
+        return "Droplet {0} <ID: {1}>".format(self.name, self.id)
 
     def as_dict(self):
         """Returns a dictionary representation of a Droplet"""
@@ -74,7 +74,7 @@ class Droplet(BaseObject):
         on the same physical server.
         :rtype: list<doclient.droplet.Droplet>
         """
-        url = self.droplet_neighbours_url % self.id
+        url = self.droplet_neighbours_url.format(self.id)
         response = self.client.api_request(url=url)
         droplets = response.get("droplets")
         return [Droplet(**droplet) for droplet in droplets]
