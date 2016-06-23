@@ -9,14 +9,15 @@ __author__ = "Sriram Velamur<sriram.velamur@gmail.com>"
 __all__ = ("Droplet", "Image", "DropletSize")
 
 import sys
+
 sys.dont_write_bytecode = True
 
 from .base import BaseObject
 from .meta import Snapshot
+from .errors import InvalidArgumentError, APIError
 
 
 class Droplet(BaseObject):
-
     """DigitalOcean droplet object"""
 
     __slots__ = ("client", "name", "ipv4_ip", "ipv6_ip", "networks")
@@ -33,6 +34,8 @@ class Droplet(BaseObject):
         droplet_base_url,
         "{0}/neighbors"
     ])
+
+    droplet_actions_url = "{0}{1}/actions"
 
     def power_off(self):
         """Droplet power off helper method"""
@@ -97,6 +100,54 @@ class Droplet(BaseObject):
         response = self.client.api_request(url=url, return_json=True)
         snapshots = response.get("snapshots")
         return [Snapshot(**snapshot) for snapshot in snapshots]
+
+    def resize(self, new_size, disk_resize=False):
+        """
+        Digitalocean droplet resize helper method
+        :param new_size: New droplet size to be resized to.
+        :type  new_size: basestring
+        :param disk_resize: Boolean to indicate disk resizing.
+        :type  disk_resize: bool
+        :return: Resized current droplet object.
+        :rtype : doclient.droplet.Droplet
+        """
+        url = self.droplet_actions_url.format(
+            self.droplet_base_url, self.id)
+        print "".join([
+            "Droplet {0} needs to be powered off before resize.",
+            " Caveat emptor: Please power on the droplet",
+            " via the Digitalocean console or the API after "
+            "resizing."]).format(self.id)
+        self.power_off()
+
+        if not isinstance(new_size, basestring):
+            raise InvalidArgumentError(
+                "Invalid size specified. Required a valid string "
+                "size representation")
+        # TODO: Move to meta module as a global.
+        valid_sizes = ("512mb", "1gb", "2gb", "4gb", "8gb", "16gb",
+                       "32gb", "48gb", "64gb")
+        if new_size not in valid_sizes:
+            raise InvalidArgumentError(
+                "Invalid size specified. Size must be an available "
+                "size in {0}".format("".join(valid_sizes)))
+        if not isinstance(disk_resize, bool):
+            disk_resize = False
+
+        resize_payload = {
+            "type": "resize",
+            "disk": disk_resize,
+            "size": new_size
+        }
+
+        response = self.client.api_request(
+            url=url, method="post", data=resize_payload)
+
+        # Handle errors
+        if response.get("message"):
+            raise APIError(response.get("message"))
+
+        return self.client.filter_droplets(self.id)
 
 
 class Image(BaseObject):
