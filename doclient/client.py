@@ -96,7 +96,7 @@ class DOClient(BaseObject):
         self.user = None
         self._request_headers = {
             "Content-Type": "application/json",
-            "Authorization": "Bearer %s" % self.token
+            "Authorization": "Bearer {0}".format(self.token)
         }
         self.get_droplets()
         self.get_user_information()
@@ -137,10 +137,10 @@ class DOClient(BaseObject):
         return self.ssh_keys
 
     def __repr__(self):
-        return "DigitalOcean API Client %s" % self._id
+        return "DigitalOcean API Client {0}".format(self._id)
 
     def __str__(self):
-        return "DigitalOcean API Client %s" % self._id
+        return "DigitalOcean API Client {0}".format(self._id)
 
     @property
     def token(self):
@@ -160,8 +160,8 @@ class DOClient(BaseObject):
 
     def add_request_headers(self, header_data):
         """
-        Helper method to add additional request headers to DigitalOcean
-        API calls.
+        Helper method to add additional request headers
+        to DigitalOcean API calls.
         :param header_data: Header key, values to add to request.
         :type  header_data: dict, tuple <len:2>
         :rtype: NoneType
@@ -183,7 +183,8 @@ class DOClient(BaseObject):
         elif is_valid_tuple:
             self._request_headers[header_data[0]] = header_data[1]
 
-    def api_request(self, url, method="GET", data=None, return_json=True):
+    def api_request(self, url, method="GET",
+                    data=None, return_json=True):
         """
         DigitalOcean API request helper method.
         :param url: REST API url to place a HTTP request to.
@@ -192,13 +193,15 @@ class DOClient(BaseObject):
         :type  method: basestring
         :param data: HTTP payload
         :type  data: dict<json>
-        :param return_json: Specifies reeturn data.
-                            If false, returns bare response.
+        :param return_json: Specifies return data format.
+                            If false, returns bare response, else
+                            returns a constructed APIResponse object.
         :type  return_json: bool
         :rtype: dict, requests.models.Response
         """
 
-        if self.api_calls_left is not None and self.api_calls_left < 1:
+        if self.api_calls_left is not None \
+                and self.api_calls_left < 1:
             raise APIAuthError("Rate limit exceeded.")
 
         method = method or "GET"
@@ -206,7 +209,8 @@ class DOClient(BaseObject):
         http_method = getattr(requests, method, None)
 
         if http_method is None:
-            raise InvalidArgumentError("Invalid HTTP method requested")
+            raise InvalidArgumentError(
+                "Invalid HTTP method requested")
 
         kwargs = {
             "url": url,
@@ -221,8 +225,11 @@ class DOClient(BaseObject):
         try:
             response = http_method(**kwargs)
         except requests.exceptions.ConnectionError:
-            raise NetworkError(
-                "No available network to connect to DigitalOcean API.")
+            error_msg = "".join([
+                "No available network to ",
+                "connect to DigitalOcean API."
+            ])
+            raise NetworkError(error_msg)
 
         if response.status_code == 400:
             raise APIError("Invalid request data. Please check data")
@@ -235,14 +242,17 @@ class DOClient(BaseObject):
 
         reset_timestamp = response.headers.get("ratelimit-reset")
         reset_timestamp = float(reset_timestamp)
-        reset_timestamp = dt.fromtimestamp(mktime(gmtime(reset_timestamp)))
+        reset_timestamp = dt.fromtimestamp(
+            mktime(gmtime(reset_timestamp)))
 
-        self.api_calls_left = response.headers.get("ratelimit-remaining")
+        self.api_calls_left = \
+            response.headers.get("ratelimit-remaining")
         self.api_quota_reset_at = reset_timestamp
 
         return response.json() if return_json else response
 
-    def get_domain(self, name):
+    @staticmethod
+    def get_domain(name):
         """
         Get information for a particular domain managed through
         DigitalOcean's DNS interface
@@ -255,7 +265,8 @@ class DOClient(BaseObject):
     @staticmethod
     def delete_domain(name):
         """
-        Delete a domain mapping managed through DigitalOcean's DNS interface
+        Delete a domain mapping managed through DigitalOcean's DNS
+        interface.
         :param name: Domain name
         :type  name: basestring
         :rtype: dict
@@ -431,7 +442,7 @@ class DOClient(BaseObject):
         Filters out droplets which match the provided droplet id.
         [Essentially one droplet].
         :param droplet_id: ID to match droplets against.
-        :type  matcher: int, basestring
+        :type  droplet_id: int, basestring
         :rtype: list<Droplet>
         """
 
@@ -521,7 +532,8 @@ class DOClient(BaseObject):
             self.api_request(url=url,
                              method="delete",
                              return_json=False)
-            message = "Successfully initiated droplet delete" % droplet
+            message = "Successfully initiated droplet delete for " \
+                      "droplet {0}".format(droplet)
         except APIAuthError, auth_error:
             message = auth_error.message
         except APIError:
@@ -542,7 +554,8 @@ class DOClient(BaseObject):
         :param region: Region identifier to spawn droplet
         :type  region: basestring
         :param size: Size of droplet to create.
-                     [512mb, 1gb, 2gb, 4gb, 8gb, 16gb, 32gb, 48gb, 64gb]
+                     [512mb, 1gb, 2gb, 4gb,
+                      8gb, 16gb, 32gb, 48gb, 64gb]
         :type  size: basestring
         :param image: Name or slug identifier of base image to use.
         :type  image: int, basestring
@@ -554,7 +567,8 @@ class DOClient(BaseObject):
         :type  ipv6: bool
         :param user_data: User data to be added to droplet's metadata
         :type  user_data: basestring
-        :param private_networking: Droplet private networking enable parameter
+        :param private_networking: Droplet private networking
+                                   enable parameter
         :type  private_networking: bool
         :rtype: doclient.droplet.Droplet
         """
@@ -608,21 +622,23 @@ class DOClient(BaseObject):
             raise InvalidArgumentError(err)
 
     def create_droplets(self, names, region, size, image,
-                       ssh_keys=None, backups=False, ipv6=False,
-                       user_data=None, private_networking=False):
+                        ssh_keys=None, backups=False, ipv6=False,
+                        user_data=None, private_networking=False):
         """
         DigitalOcean APIv2 droplet create method.
-        Creates a droplet with requested payload features.
-        :param names: Identifiers for createddroplet.
+        Creates a list of droplets all with the same requested
+        payload features.
+        :param names: Identifiers for the droplets to be created.
         :type  names: list<basestring>
         :param region: Region identifier to spawn droplet
         :type  region: basestring
         :param size: Size of droplet to create.
-                     [512mb, 1gb, 2gb, 4gb, 8gb, 16gb, 32gb, 48gb, 64gb]
+                     [512mb, 1gb, 2gb, 4gb,
+                      8gb, 16gb, 32gb, 48gb, 64gb]
         :type  size: basestring
         :param image: Name or slug identifier of base image to use.
         :type  image: int, basestring
-        :param ssh_keys: SSH keys to add to created droplet
+        :param ssh_keys: SSH keys to add to created droplets
         :type  ssh_keys: list<basestring>, list<long>
         :param backups: Droplet backups enable state parameter
         :type  backups: bool
@@ -630,7 +646,8 @@ class DOClient(BaseObject):
         :type  ipv6: bool
         :param user_data: User data to be added to droplet's metadata
         :type  user_data: basestring
-        :param private_networking: Droplet private networking enable parameter
+        :param private_networking: Droplet private networking
+                                   enable parameter
         :type  private_networking: bool
         :rtype: doclient.droplet.Droplet
         """
@@ -638,7 +655,8 @@ class DOClient(BaseObject):
             assert isinstance(names, list), \
                 "Invalid droplet name. Requires a list of strings"
             assert all([isinstance(x, basestring) for x in names]), \
-                "One or more invalid droplet names. Requires a string name"
+                "".join(["One or more invalid droplet names."
+                        "Requires a string name"])
             assert isinstance(region, basestring), \
                 "Invalid droplet region. Requires a string region id"
             assert isinstance(size, basestring), \

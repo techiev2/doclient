@@ -12,8 +12,8 @@ class BaseError(BaseException):
     """
     DigitalOcean APIv2 base error class.
     Derived error classes need to specify their error message prefix.
-    If a child class fails to provide a prefix property, prefix defaults
-    to DOClient::GeneralError
+    If a child class fails to provide a prefix property,
+    prefix defaults to DOClient::GeneralError
     """
 
     def __init__(self, *args, **kwargs):
@@ -21,7 +21,7 @@ class BaseError(BaseException):
             raise RuntimeError("Invalid invocation")
         message = args[0]
         prefix = getattr(self, "prefix", "GeneralError")
-        message = "DOClient::%s %s: " % (prefix, message)
+        message = "DOClient::{0} {1}: ".format(prefix, message)
         args = (message,)
         super(BaseError, self).__init__(*args, **kwargs)
 
