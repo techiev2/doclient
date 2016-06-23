@@ -252,7 +252,8 @@ class DOClient(BaseObject):
         """
         return Domain.get(name)
 
-    def delete_domain(self, name):
+    @staticmethod
+    def delete_domain(name):
         """
         Delete a domain mapping managed through DigitalOcean's DNS interface
         :param name: Domain name
@@ -261,7 +262,8 @@ class DOClient(BaseObject):
         """
         return Domain.delete(name)
 
-    def create_domain(self, name, ip_address):
+    @staticmethod
+    def create_domain(name, ip_address):
         """
         Create domain name mapping for domains managed through
         DigitalOcean's DNS interface.
@@ -284,7 +286,8 @@ class DOClient(BaseObject):
         except AssertionError, error:
             raise InvalidArgumentError(error)
 
-    def get_domains(self):
+    @staticmethod
+    def get_domains():
         """
         Get all domain maps generated through DigitalOcean's DNS.
         :rtype: list<Domain>

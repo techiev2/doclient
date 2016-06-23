@@ -13,6 +13,8 @@ from doclient.meta import Domain, Snapshot
 
 class DOClientTest(unittest.TestCase):
 
+    """Tests for DigitalOcean client class"""
+
     token = environ.get("DO_KEY")
     invalid_token = ""
     client = None
@@ -45,14 +47,15 @@ class DOClientTest(unittest.TestCase):
             name = environ.get("test_domain_name")
             ip_address = environ.get("test_domain_ip")
             try:
-                create_response = self.client.create_domain(name, ip_address)
+                create_response = self.client.create_domain(
+                    name, ip_address)
                 self.assertIsInstance(create_response, dict)
                 domain = self.client.get_domain(name)
                 self.assertIsInstance(domain, Domain)
                 domains = self.client.get_domains()
                 self.assertIsInstance(domains, list)
-                all_domains = all([isinstance(domain, Domain)
-                                   for domain in domains])
+                all_domains = all((isinstance(domain, Domain)
+                                   for domain in domains))
                 self.assertTrue(all_domains)
                 del_response = self.client.delete_domain(name)
                 self.assertIsInstance(del_response, dict)
@@ -61,7 +64,7 @@ class DOClientTest(unittest.TestCase):
                     (APIAuthError, APIError, InvalidArgumentError))
 
     def test_droplet_methods(self):
-        """Test droplet functionalities"""
+        """Test droplet functions"""
         if self.client:
             droplet = self.client.filter_droplets("f")[0]
             self.assertIsInstance(droplet, Droplet)
@@ -73,8 +76,6 @@ class DOClientTest(unittest.TestCase):
             self.assertIsInstance(neighbours, list)
             for neighbour in neighbours:
                 self.assertIsInstance(neighbour, Droplet)
-
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -32,8 +32,9 @@ class BaseObject(object):
     def as_dict(self):
         """Dictionary repr for BaseObject objects"""
         return {
-            k if not k.startswith("_") else k[1:]: getattr(self, k, None)
-                for k in [x for x in self.props if x != "client"]
+            k if not k.startswith("_") else
+            k[1:]: getattr(self, k, None) for
+            k in (x for x in self.props if x != "client")
         }
 
     def as_json(self):
