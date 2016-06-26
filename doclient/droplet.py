@@ -101,6 +101,20 @@ class Droplet(BaseObject):
         snapshots = response.get("snapshots")
         return [Snapshot(**snapshot) for snapshot in snapshots]
 
+    def reset_password(self):
+        """
+        DigitalOcean droplet access password reset helper method.
+        Initializes a password reset for a requested droplet.
+        """
+        url = self.droplet_actions_url.format(
+            self.droplet_base_url, self.id)
+        print "Attempting to reset password for droplet {0}".format(
+            self.id)
+        payload = {
+            "type": "password_reset"
+        }
+        self.client.api_request(url=url, data=payload)
+
     def resize(self, new_size, disk_resize=False):
         """
         Digitalocean droplet resize helper method
