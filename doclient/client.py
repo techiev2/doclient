@@ -133,7 +133,8 @@ class DOClient(BaseObject):
         keys = response.get("ssh_keys", [])
         for key in keys:
             key_object = SSHKey(**key)
-            self.ssh_keys.append(key_object)
+            if key_object not in self.ssh_keys:
+                self.ssh_keys.append(key_object)
 
         return self.ssh_keys
 
