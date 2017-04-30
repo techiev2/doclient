@@ -18,7 +18,7 @@ from .errors import InvalidArgumentError, APIError
 
 
 class Droplet(BaseObject):
-    """DigitalOcean droplet object"""
+    r"""DigitalOcean droplet object"""
 
     __slots__ = ("client", "name", "ipv4_ip", "ipv6_ip", "networks")
 

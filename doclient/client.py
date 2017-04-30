@@ -26,7 +26,7 @@ from .user import DOUser
 
 class DOClient(BaseObject):
 
-    """DigitalOcean APIv2 client"""
+    r"""DigitalOcean APIv2 client"""
 
     api_calls_left = None
     api_quota_reset_at = None
