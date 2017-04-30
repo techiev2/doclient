@@ -87,7 +87,7 @@ class DOClient(BaseObject):
     })
 
     def __init__(self, token):
-        """
+        r"""
         DigitalOcean APIv2 client init
         :param token: DigitalOcean API authentication token
         :type  token: basestring
@@ -105,7 +105,7 @@ class DOClient(BaseObject):
         self.get_ssh_keys()
 
     def get_user_information(self):
-        """DigitalOcean APIv2 user information helper method"""
+        r"""DigitalOcean APIv2 user information helper method"""
 
         response = self.api_request(url=self.userinfo_url,
                                     return_json=False)
@@ -123,7 +123,7 @@ class DOClient(BaseObject):
         return user
 
     def get_ssh_keys(self):
-        """
+        r"""
         Helper method to retrieve the list of SSH keys associated
         with a DigitalOcean user account.
         """
@@ -146,7 +146,7 @@ class DOClient(BaseObject):
 
     @property
     def token(self):
-        """
+        r"""
         DigitalOcean API client token property.
         Used with request headers as Authorization Bearer
         """
@@ -154,18 +154,19 @@ class DOClient(BaseObject):
 
     @property
     def request_headers(self):
-        """
+        r"""
         DigitalOcean API client base request headers property.
         Used with all of the DOClient's HTTP requests.
         """
         return self._request_headers
 
     def add_request_headers(self, header_data):
-        """
+        r"""
         Helper method to add additional request headers
         to DigitalOcean API calls.
+
         :param header_data: Header key, values to add to request.
-        :type  header_data: dict, tuple <len:2>
+        :type  header_data: dict, tuple
         :rtype: NoneType
         """
         is_valid_dict = isinstance(header_data, dict)
@@ -187,17 +188,18 @@ class DOClient(BaseObject):
 
     def api_request(self, url, method="GET",
                     data=None, return_json=True):
-        """
+        r"""
         DigitalOcean API request helper method.
+
         :param url: REST API url to place a HTTP request to.
         :type  url: basestring
         :param method: HTTP method
         :type  method: basestring
-        :param data: HTTP payload
-        :type  data: dict<json>
+        :param data: HTTP payload (JSON dumpable)
+        :type  data: dict
         :param return_json: Specifies return data format.
-                            If false, returns bare response, else
-                            returns a constructed APIResponse object.
+                            If false, returns bare response.
+                            Else returns an APIResponse object.
         :type  return_json: bool
         :rtype: dict, requests.models.Response
         """
@@ -255,9 +257,10 @@ class DOClient(BaseObject):
 
     @staticmethod
     def get_domain(name):
-        """
+        r"""
         Get information for a particular domain managed through
-        DigitalOcean's DNS interface
+        DigitalOcean's DNS interface.
+
         :param name: Domain name
         :type  name: basestring
         :rtype: dict
@@ -266,9 +269,10 @@ class DOClient(BaseObject):
 
     @staticmethod
     def delete_domain(name):
-        """
+        r"""
         Delete a domain mapping managed through DigitalOcean's DNS
         interface.
+
         :param name: Domain name
         :type  name: basestring
         :rtype: dict
@@ -277,9 +281,10 @@ class DOClient(BaseObject):
 
     @staticmethod
     def create_domain(name, ip_address):
-        """
-        Create domain name mapping for domains managed through
-        DigitalOcean's DNS interface.
+        r"""
+        Helper method to create domain name mapping for domains
+        managed through DigitalOcean's DNS interface.
+
         :param name: Domain name
         :type  name: basestring
         :param ip_address: IP address to map domain name to.
@@ -301,15 +306,17 @@ class DOClient(BaseObject):
 
     @staticmethod
     def get_domains():
-        """
+        r"""
         Get all domain maps generated through DigitalOcean's DNS.
-        :rtype: list<Domain>
+
+        :rtype: list (:class: `Domain <doclient.meta.Domain>` )
         """
         return Domain.get_all()
 
     def get_images(self):
-        """
+        r"""
         Get list of images available in your DigitalOcean account.
+
         :raises: APIAuthError
         """
         response = self.api_request(url=self.images_url)
@@ -317,8 +324,9 @@ class DOClient(BaseObject):
         return [Image(**image) for image in images]
 
     def get_sizes(self):
-        """
+        r"""
         Get list of image sizes available.
+
         :raises: APIAuthError
         """
         response = self.api_request(url=self.sizes_url)
@@ -326,8 +334,9 @@ class DOClient(BaseObject):
         return [DropletSize(**size) for size in sizes]
 
     def get_droplets(self):
-        """
+        r"""
         Get list of droplets for the requested account.
+
         :raises: APIAuthError
         """
 
@@ -391,8 +400,9 @@ class DOClient(BaseObject):
         self.droplets = _droplets
 
     def poweroff_droplet(self, instance_id):
-        """
+        r"""
         Instance power off helper method.
+
         :param instance_id: ID of the instance to turn off.
         :type  instance_id: int, basestring<int>
         :rtype: dict
@@ -407,8 +417,9 @@ class DOClient(BaseObject):
             return {"message": error.message}
 
     def poweron_droplet(self, instance_id):
-        """
+        r"""
         Instance power on helper method.
+
         :param instance_id: ID of the instance to turn on.
         :type  instance_id: int, basestring<int>
         :rtype: dict
@@ -423,8 +434,9 @@ class DOClient(BaseObject):
             return {"message": error.message}
 
     def powercycle_droplet(self, instance_id):
-        """
+        r"""
         Instance power cycle helper method.
+
         :param instance_id: ID of the instance to powercycle.
         :type  instance_id: int, basestring<int>
         :rtype: dict
@@ -439,10 +451,11 @@ class DOClient(BaseObject):
             return {"message": error.message}
 
     def get_droplet(self, droplet_id):
-        """
+        r"""
         Basic droplet find helper.
         Filters out droplets which match the provided droplet id.
         [Essentially one droplet].
+
         :param droplet_id: ID to match droplets against.
         :type  droplet_id: int, basestring
         :rtype: list<Droplet>
@@ -463,11 +476,12 @@ class DOClient(BaseObject):
         return droplet[0] if droplet else None
 
     def filter_droplets(self, matcher=None):
-        """
+        r"""
         Basic droplet filter helper.
         Filters out droplets which pass a substring match on the name
         for the provided matcher.
         Matcher defaults to empty string and returns all instances
+
         :param matcher: Token to match droplet names against.
         :type  matcher: basestring
         :rtype: list<Droplet>
@@ -493,12 +507,13 @@ class DOClient(BaseObject):
                     if re_match(matcher, x.name) is not None]
 
     def get_droplet_snapshots(self, droplet_id):
-        """
+        r"""
         DigitalOcean APIv2 droplet snapshots helper method.
         Returns a list of snapshots created for the requested droplet.
+
         :param droplet_id: ID of droplet to get snapshots for.
         :type  droplet_id: int
-        :rtype: list<dict>
+        :rtype: list
         """
         droplet = self.get_droplet(droplet_id)
         if not droplet:
@@ -506,12 +521,13 @@ class DOClient(BaseObject):
         return droplet.get_snapshots()
 
     def get_droplet_kernels(self, droplet_id):
-        """
+        r"""
         DigitalOcean APIv2 droplet kernels helper method.
         Returns a list of kernels available for the requested droplet.
+
         :param droplet_id: ID of droplet to get available kernels for.
         :type  droplet_id: int
-        :rtype: list<doclient.droplet.Kernel>
+        :rtype: list ( :class:`Kernel <doclient.droplet.Kernel>`)
         """
         url = self.droplet_kernels_url % droplet_id
         response = self.api_request(url=url)
@@ -519,9 +535,9 @@ class DOClient(BaseObject):
         return [Kernel(**kernel) for kernel in kernels]
 
     def delete_droplet(self, droplet_id):
-        """
-        DigitalOcean APIv2 droplet delete method.
-        Deletes a requested droplet.
+        r"""
+        DigitalOcean APIv2 droplet delete method. Deletes a requested droplet.
+
         :param droplet_id: ID of droplet to delete.
         :type  droplet_id: int
         :rtype: dict
@@ -548,16 +564,15 @@ class DOClient(BaseObject):
     def create_droplet(self, name, region, size, image,
                        ssh_keys=None, backups=False, ipv6=False,
                        user_data=None, private_networking=False):
-        """
+        r"""
         DigitalOcean APIv2 droplet create method.
         Creates a droplet with requested payload features.
+
         :param name: Identifier for createddroplet.
         :type  name: basestring
         :param region: Region identifier to spawn droplet
         :type  region: basestring
-        :param size: Size of droplet to create.
-                     [512mb, 1gb, 2gb, 4gb,
-                      8gb, 16gb, 32gb, 48gb, 64gb]
+        :param size: Size of droplet to create. [512mb, 1gb, 2gb, 4gb, 8gb, 16gb, 32gb, 48gb, 64gb]
         :type  size: basestring
         :param image: Name or slug identifier of base image to use.
         :type  image: int, basestring
@@ -569,10 +584,10 @@ class DOClient(BaseObject):
         :type  ipv6: bool
         :param user_data: User data to be added to droplet's metadata
         :type  user_data: basestring
-        :param private_networking: Droplet private networking
-                                   enable parameter
+        :param private_networking: Droplet private networking enable parameter
         :type  private_networking: bool
-        :rtype: doclient.droplet.Droplet
+
+        :rtype: :class:`Droplet <doclient.droplet.Droplet>`
         """
         try:
             assert isinstance(name, basestring), \
@@ -628,17 +643,16 @@ class DOClient(BaseObject):
     def create_droplets(self, names, region, size, image,
                         ssh_keys=None, backups=False, ipv6=False,
                         user_data=None, private_networking=False):
-        """
+        r"""
         DigitalOcean APIv2 droplet create method.
         Creates a list of droplets all with the same requested
         payload features.
+
         :param names: Identifiers for the droplets to be created.
         :type  names: list<basestring>
         :param region: Region identifier to spawn droplet
         :type  region: basestring
-        :param size: Size of droplet to create.
-                     [512mb, 1gb, 2gb, 4gb,
-                      8gb, 16gb, 32gb, 48gb, 64gb]
+        :param size: Size of droplet to create. [512mb, 1gb, 2gb, 4gb, 8gb, 16gb, 32gb, 48gb, 64gb]
         :type  size: basestring
         :param image: Name or slug identifier of base image to use.
         :type  image: int, basestring
@@ -650,10 +664,10 @@ class DOClient(BaseObject):
         :type  ipv6: bool
         :param user_data: User data to be added to droplet's metadata
         :type  user_data: basestring
-        :param private_networking: Droplet private networking
-                                   enable parameter
+        :param private_networking: Droplet private networking enable parameter
         :type  private_networking: bool
-        :rtype: doclient.droplet.Droplet
+        :raises: :class:`InvalidArgumentError <doclient.errors.InvalidArgumentError>`
+        :rtype: :class:`Droplet <doclient.droplet.Droplet>`
         """
         try:
             assert isinstance(names, list), \
@@ -714,9 +728,9 @@ class DOClient(BaseObject):
             raise InvalidArgumentError(err)
 
     def get_regions(self):
-        """
-        DigitalOcean APIv2 region list method.
-        Returns a list of regions available.
+        r"""
+        DigitalOcean APIv2 region list method. Returns a list of regions available.
+
         :TODO: Add way to filter regions with pattern/features.
         """
         response = self.api_request(url=self.regions_url)

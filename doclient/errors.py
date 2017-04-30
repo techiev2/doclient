@@ -10,7 +10,7 @@ sys.dont_write_bytecode = True
 
 class BaseError(BaseException):
 
-    """
+    r"""
     DigitalOcean APIv2 base error class.
     Derived error classes need to specify their error message prefix.
     If a child class fails to provide a prefix property,
@@ -28,17 +28,17 @@ class BaseError(BaseException):
 
 
 class APIAuthError(BaseError):
-    """
+    r"""
     DigitalOcean APIv2 authentication error class.
-    Raised when client initialization receives a HTTP 401 while
-    requesting for list of instances associated with the account.
+    Raised when client initialization receives a HTTP 401 from the API.
+    Client init requests for list of instances associated with the account.
     """
 
     prefix = "APIAuthError"
 
 
 class InvalidArgumentError(BaseError):
-    """
+    r"""
     DigitalOcean APIv2 method arugment error class.
     Raised when a method receives an invalid, empty,
     or type mismatching value for an arugment.
@@ -48,7 +48,7 @@ class InvalidArgumentError(BaseError):
 
 
 class APIError(BaseError):
-    """
+    r"""
     DigitalOcean APIv2 generic API error class.
     Raised when a failure response is received from the
     API that is not an authentication related one.
@@ -58,7 +58,7 @@ class APIError(BaseError):
 
 
 class NetworkError(BaseError):
-    """
+    r"""
     DigitalOcean APIv2 client fallback network error class.
     Raised when requests library encounters a network error
     while attempting to contact the DigitalOcean API.

@@ -63,19 +63,21 @@ class Droplet(BaseObject):
         return {"name": self.name, "id": self.id}
 
     def get_kernels(self):
-        """
+        r"""
         DigitalOcean droplet kernels list helper.
         Returns a list of kernels available for a particular droplet.
-        :rtype: list<doclient.droplet.Kernel>
+
+        :rtype: list (:class:`Kernel <doclient.meta.Kernel>`)
         """
         return self.client.get_droplet_kernels(self.id)
 
     def get_neighbours(self):
-        """
+        r"""
         DigitalOcean APIv2 droplet neighbours helper method.
         Returns a list of droplets running
         on the same physical server.
-        :rtype: list<doclient.droplet.Droplet>
+
+        :rtype: list (:class:`Droplet <.Droplet>`)
         """
         url = self.droplet_neighbours_url.format(self.id)
         response = self.client.api_request(url=url)
@@ -83,18 +85,19 @@ class Droplet(BaseObject):
         return [Droplet(**droplet) for droplet in droplets]
 
     def delete(self):
-        """
-        DigitalOcean droplet delete helper.
-        Deletes a particular droplet.
+        r"""
+        DigitalOcean droplet delete helper. Deletes a particular droplet.
+
         :rtype: dict
         """
         return self.client.delete_droplet(self.id)
 
     def get_snapshots(self):
-        """
+        r"""
         DigitalOcean droplet snapshot list helper.
         Returns a list of snapshots for a particular droplet.
-        :rtype: list<Snapshot>
+
+        :rtype: list (:class:`Snapshot <doclient.meta.Snapshot>`)
         """
         url = self.droplet_snapshot_url % self.id
         response = self.client.api_request(url=url, return_json=True)
@@ -102,7 +105,7 @@ class Droplet(BaseObject):
         return [Snapshot(**snapshot) for snapshot in snapshots]
 
     def reset_password(self):
-        """
+        r"""
         DigitalOcean droplet access password reset helper method.
         Initializes a password reset for a requested droplet.
         """
@@ -116,14 +119,16 @@ class Droplet(BaseObject):
         self.client.api_request(url=url, data=payload)
 
     def resize(self, new_size, disk_resize=False):
-        """
+        r"""
         Digitalocean droplet resize helper method
+
         :param new_size: New droplet size to be resized to.
         :type  new_size: basestring
         :param disk_resize: Boolean to indicate disk resizing.
         :type  disk_resize: bool
         :return: Resized current droplet object.
-        :rtype : doclient.droplet.Droplet
+
+        :rtype: :class:`Droplet <.Droplet>`
         """
         url = self.droplet_actions_url.format(
             self.droplet_base_url, self.id)
@@ -166,7 +171,20 @@ class Droplet(BaseObject):
 
 class Image(BaseObject):
 
-    """DigitalOcean droplet base image object"""
+    """
+    DigitalOcean droplet base image object
+
+    :property min_disk_size: Minimum disk size for the image.
+
+    :property slug: Slug identifier for the image.
+
+    :property name: Human readable identifier name for the image.
+
+    :property _id: Identifier for the image.
+
+    :property regions: Regions the image is available in.
+
+    """
 
     min_disk_size, slug, name, _id, regions = (None,) * 5
 

@@ -18,7 +18,14 @@ from .errors import APIAuthError, InvalidArgumentError, APIError
 
 class Domain(BaseObject):
 
-    """DigitalOcean droplet domain object"""
+    r"""
+    DigitalOcean droplet domain object
+
+    :property name: Name of the domain.
+    :property ttl:  Time-to-live for the domain.
+    :property zone_file: Zone file for the domain.
+
+    """
 
     name, ttl, zone_file = (None,) * 3
     base_url = "https://api.digitalocean.com/v2/domains/"
@@ -32,7 +39,15 @@ class Domain(BaseObject):
     @classmethod
     @set_caller
     def create(cls, name, ip_address):
-        """Domain creation helper method"""
+        r"""
+        Domain creation helper method
+
+        :param name: Name for the domain
+        :type  name: basestring
+        :param ip_address: IPv4 address for the domain
+        :type  ip_address: basestring
+
+        """
         payload = {
             "url": cls.base_url,
             "method": "post",
