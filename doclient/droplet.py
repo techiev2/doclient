@@ -25,16 +25,12 @@ class Droplet(BaseObject):
     client, name, ipv4_ip, ipv6_ip = (None,) * 4
     networks = []
 
-    droplet_base_url = "https://api.digitalocean.com/v2/droplets/"
-    droplet_snapshot_url = "".join([
-        droplet_base_url,
-        "%s/snapshots?page=1&per_page=100"
-    ])
-    droplet_neighbours_url = "".join([
-        droplet_base_url,
-        "{0}/neighbors"
-    ])
-
+    droplet_base_url = 'https://api.digitalocean.com/v2/droplets/'
+    droplet_snapshot_url = \
+        '{droplet_base_url}/snapshots?page=1&per_page=100'.format(
+        **locals())
+    droplet_neighbours_url = \
+        '{droplet_base_url}/neighbors'.format(**locals())
     droplet_actions_url = "{0}{1}/actions"
 
     def power_off(self):
