@@ -13,8 +13,8 @@ def set_caller(function):
     """
     def wrapper(cls, *args, **kwargs):
         """Wrapper method"""
-        cls.client = getattr(sys, "_getframe")(1).f_locals.get("self")
-
+        frame_locals = getattr(sys, "_getframe")(1).f_locals
+        setattr(cls, 'client', frame_locals.get("self"))
         return function(cls, *args, **kwargs)
 
     return wrapper
