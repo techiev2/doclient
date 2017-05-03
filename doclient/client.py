@@ -304,8 +304,7 @@ class DOClient(BaseObject):
         except AssertionError, error:
             raise InvalidArgumentError(error)
 
-    @staticmethod
-    def get_domains():
+    def get_domains(self):
         r"""
         Get all domain maps generated through DigitalOcean's DNS.
 
