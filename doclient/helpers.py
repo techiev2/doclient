@@ -8,7 +8,7 @@ sys.dont_write_bytecode = True
 
 
 def set_caller(function):
-    """
+    r"""
     Decorator to set reference DOClient object to callee object instance.
     """
     def wrapper(cls, *args, **kwargs):
