@@ -9,8 +9,8 @@ __author__ = "Sriram Velamur<sriram.velamur@gmail.com>"
 __all__ = ("Droplet", "Image", "DropletSize")
 
 import sys
-
 sys.dont_write_bytecode = True
+from time import sleep
 
 from .base import BaseObject
 from .meta import Snapshot
@@ -134,6 +134,12 @@ class Droplet(BaseObject):
             " via the Digitalocean console or the API after "
             "resizing."]).format(self.id)
         self.power_off()
+        # Wait for 30 seconds to allow for the droplet to power off
+        # before inititalizing the resizing. This, and the sleep after
+        # resizing, are arbitrary values.
+        # TODO: Use information from the API on the droplet status and
+        # use event triggers/similar to initialize further changes.
+        sleep(30)
 
         if not isinstance(new_size, basestring):
             raise InvalidArgumentError(
