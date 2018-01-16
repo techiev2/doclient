@@ -1,0 +1,837 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>client &#8212; digitalocean-client 1.0.6 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for client</h1><div class="highlight"><pre>
+<span></span><span class="ch">#! coding=utf-8</span>
+<span class="sd">&quot;&quot;&quot;DigitalOcean APIv2 client module&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Sriram Velamur&lt;sriram.velamur@gmail.com&gt;&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;DOClient&quot;</span><span class="p">,)</span>
+
+<span class="c1">#pylint: disable=R0904,R0913,W0142</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">dont_write_bytecode</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="kn">from</span> <span class="nn">json</span> <span class="k">import</span> <span class="n">dumps</span> <span class="k">as</span> <span class="n">json_dumps</span>
+<span class="kn">from</span> <span class="nn">re</span> <span class="k">import</span> <span class="nb">compile</span> <span class="k">as</span> <span class="n">re_compile</span><span class="p">,</span> <span class="n">match</span> <span class="k">as</span> <span class="n">re_match</span>
+<span class="kn">from</span> <span class="nn">ast</span> <span class="k">import</span> <span class="n">literal_eval</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span> <span class="k">as</span> <span class="n">dt</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">mktime</span><span class="p">,</span> <span class="n">gmtime</span>
+
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="kn">from</span> <span class="nn">base</span> <span class="k">import</span> <span class="n">BaseObject</span>
+<span class="kn">from</span> <span class="nn">droplet</span> <span class="k">import</span> <span class="n">Droplet</span><span class="p">,</span> <span class="n">Image</span><span class="p">,</span> <span class="n">DropletSize</span>
+<span class="kn">from</span> <span class="nn">meta</span> <span class="k">import</span> <span class="n">Domain</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">Snapshot</span><span class="p">,</span> \
+    <span class="n">Region</span><span class="p">,</span> <span class="n">SSHKey</span><span class="p">,</span> <span class="n">DropletNetwork</span>
+<span class="kn">from</span> <span class="nn">errors</span> <span class="k">import</span> <span class="n">APIAuthError</span><span class="p">,</span> <span class="n">InvalidArgumentError</span><span class="p">,</span> \
+    <span class="n">APIError</span><span class="p">,</span> <span class="n">NetworkError</span>
+<span class="kn">from</span> <span class="nn">user</span> <span class="k">import</span> <span class="n">DOUser</span>
+
+
+<div class="viewcode-block" id="DOClient"><a class="viewcode-back" href="../client.html#client.DOClient">[docs]</a><span class="k">class</span> <span class="nc">DOClient</span><span class="p">(</span><span class="n">BaseObject</span><span class="p">):</span>
+
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;DigitalOcean APIv2 client.&quot;&quot;&quot;</span>
+
+    <span class="n">api_calls_left</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">api_quota_reset_at</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">droplet_url</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="s2">&quot;https://api.digitalocean.com/v2/&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;droplets?page=1&amp;per_page=100&quot;</span>
+    <span class="p">])</span>
+    <span class="n">images_url</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="s2">&quot;https://api.digitalocean.com/v2/&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;images?page=1&amp;per_page=100&quot;</span>
+    <span class="p">])</span>
+    <span class="n">sizes_url</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="s2">&quot;https://api.digitalocean.com/v2/&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sizes?page=1&amp;per_page=100&quot;</span>
+    <span class="p">])</span>
+
+    <span class="n">power_onoff_url</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="s2">&quot;https://api.digitalocean.com/v2/&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;droplets/</span><span class="si">%s</span><span class="s2">/actions&quot;</span>
+    <span class="p">])</span>
+
+    <span class="n">regions_url</span> <span class="o">=</span> <span class="s2">&quot;https://api.digitalocean.com/v2/regions&quot;</span>
+
+    <span class="n">userinfo_url</span> <span class="o">=</span> <span class="s2">&quot;https://api.digitalocean.com/v2/account&quot;</span>
+    <span class="n">keys_url</span> <span class="o">=</span> <span class="n">userinfo_url</span> <span class="o">+</span> <span class="s2">&quot;/keys&quot;</span>
+
+    <span class="n">droplet_base_url</span> <span class="o">=</span> <span class="s2">&quot;https://api.digitalocean.com/v2/droplets/&quot;</span>
+    <span class="n">droplet_snapshot_url</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="n">droplet_base_url</span><span class="p">,</span>
+        <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/snapshots?page=1&amp;per_page=100&quot;</span>
+    <span class="p">])</span>
+    <span class="n">droplet_kernels_url</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="n">droplet_base_url</span><span class="p">,</span>
+        <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/kernels?page=1&amp;per_page=100&quot;</span>
+    <span class="p">])</span>
+    <span class="n">droplet_neighbours_url</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+        <span class="n">droplet_base_url</span><span class="p">,</span>
+        <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/neighbors&quot;</span>
+    <span class="p">])</span>
+
+    <span class="n">ssh_keys</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">networks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Metadata</span>
+
+    <span class="n">poweroff_data</span> <span class="o">=</span> <span class="n">json_dumps</span><span class="p">({</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;power_off&quot;</span>
+    <span class="p">})</span>
+
+    <span class="n">poweron_data</span> <span class="o">=</span> <span class="n">json_dumps</span><span class="p">({</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;power_on&quot;</span>
+    <span class="p">})</span>
+
+    <span class="n">powercycle_data</span> <span class="o">=</span> <span class="n">json_dumps</span><span class="p">({</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;power_cycle&quot;</span>
+    <span class="p">})</span>
+
+<div class="viewcode-block" id="DOClient.__init__"><a class="viewcode-back" href="../client.html#client.DOClient.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DigitalOcean APIv2 client init.</span>
+
+<span class="sd">        :param token: DigitalOcean API authentication token</span>
+<span class="sd">        :type  token: basestring</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DOClient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="n">token</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">droplets</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request_headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="p">)</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_droplets</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_user_information</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_ssh_keys</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DOClient.get_user_information"><a class="viewcode-back" href="../client.html#client.DOClient.get_user_information">[docs]</a>    <span class="k">def</span> <span class="nf">get_user_information</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;DigitalOcean APIv2 user information helper method&quot;&quot;&quot;</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">userinfo_url</span><span class="p">,</span>
+                                    <span class="n">return_json</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">APIAuthError</span><span class="p">(</span><span class="s2">&quot;Unable to authenticate session&quot;</span><span class="p">)</span>
+
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;account&quot;</span><span class="p">)</span>
+        <span class="n">payload</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+            <span class="s2">&quot;droplet_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">droplets</span><span class="p">)</span>
+        <span class="p">})</span>
+
+        <span class="n">user</span> <span class="o">=</span> <span class="n">DOUser</span><span class="p">(</span><span class="o">**</span><span class="n">payload</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">user</span>
+        <span class="k">return</span> <span class="n">user</span></div>
+
+<div class="viewcode-block" id="DOClient.get_ssh_keys"><a class="viewcode-back" href="../client.html#client.DOClient.get_ssh_keys">[docs]</a>    <span class="k">def</span> <span class="nf">get_ssh_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method to retrieve the list of SSH keys associated</span>
+<span class="sd">        with a DigitalOcean user account.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span>
+            <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">keys_url</span><span class="p">,</span> <span class="n">return_json</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ssh_keys&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="n">key_object</span> <span class="o">=</span> <span class="n">SSHKey</span><span class="p">(</span><span class="o">**</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key_object</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssh_keys</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ssh_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key_object</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssh_keys</span></div>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;DigitalOcean API Client </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;DigitalOcean API Client </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">token</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DigitalOcean API client token property.</span>
+<span class="sd">        Used with request headers as Authorization Bearer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_token</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">request_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DigitalOcean API client base request headers property.</span>
+<span class="sd">        Used with all of the DOClient&#39;s HTTP requests.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_headers</span>
+
+<div class="viewcode-block" id="DOClient.add_request_headers"><a class="viewcode-back" href="../client.html#client.DOClient.add_request_headers">[docs]</a>    <span class="k">def</span> <span class="nf">add_request_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header_data</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method to add additional request headers</span>
+<span class="sd">        to DigitalOcean API calls.</span>
+
+<span class="sd">        :param header_data: Header key, values to add to request.</span>
+<span class="sd">        :type  header_data: dict, tuple</span>
+<span class="sd">        :rtype: NoneType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">is_valid_dict</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="n">is_valid_tuple</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header_data</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> \
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">header_data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="n">passes</span> <span class="o">=</span> <span class="n">is_valid_dict</span> <span class="ow">or</span> <span class="n">is_valid_tuple</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">passes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidArgumentError</span><span class="p">(</span>
+                <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+                    <span class="s2">&quot;Request header setter requires a &quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;dictionary or tuple of key/value&quot;</span>
+                <span class="p">]))</span>
+
+        <span class="k">if</span> <span class="n">is_valid_dict</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">header_data</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_headers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">elif</span> <span class="n">is_valid_tuple</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request_headers</span><span class="p">[</span><span class="n">header_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">header_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DOClient.api_request"><a class="viewcode-back" href="../client.html#client.DOClient.api_request">[docs]</a>    <span class="k">def</span> <span class="nf">api_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_json</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DigitalOcean API request helper method.</span>
+
+<span class="sd">        :param url: REST API url to place a HTTP request to.</span>
+<span class="sd">        :type  url: basestring</span>
+<span class="sd">        :param method: HTTP method</span>
+<span class="sd">        :type  method: basestring</span>
+<span class="sd">        :param data: HTTP payload (JSON dumpable)</span>
+<span class="sd">        :type  data: dict</span>
+<span class="sd">        :param return_json: Specifies return data format.</span>
+<span class="sd">                            If false, returns bare response.</span>
+<span class="sd">                            Else returns an APIResponse object.</span>
+<span class="sd">        :type  return_json: bool</span>
+<span class="sd">        :rtype: dict, requests.models.Response</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_calls_left</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_calls_left</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">APIAuthError</span><span class="p">(</span><span class="s2">&quot;Rate limit exceeded.&quot;</span><span class="p">)</span>
+
+        <span class="n">method</span> <span class="o">=</span> <span class="n">method</span> <span class="ow">or</span> <span class="s2">&quot;GET&quot;</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">http_method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">http_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidArgumentError</span><span class="p">(</span>
+                <span class="s2">&quot;Invalid HTTP method requested&quot;</span><span class="p">)</span>
+
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">url</span><span class="p">,</span>
+            <span class="s2">&quot;headers&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_headers</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">json_dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">})</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">http_method</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConnectionError</span><span class="p">:</span>
+            <span class="n">error_msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+                <span class="s2">&quot;No available network to &quot;</span><span class="p">,</span>
+                <span class="s2">&quot;connect to DigitalOcean API.&quot;</span>
+            <span class="p">])</span>
+            <span class="k">raise</span> <span class="n">NetworkError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">400</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">APIError</span><span class="p">(</span><span class="s2">&quot;Invalid request data. Please check data&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">401</span><span class="p">,</span> <span class="mi">403</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">APIAuthError</span><span class="p">(</span>
+                <span class="s2">&quot;Invalid authorization bearer. Please check token&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">500</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">APIError</span><span class="p">(</span><span class="s2">&quot;DigitalOcean API error. Please try later&quot;</span><span class="p">)</span>
+
+        <span class="n">reset_timestamp</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ratelimit-reset&quot;</span><span class="p">)</span>
+        <span class="n">reset_timestamp</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">reset_timestamp</span><span class="p">)</span>
+        <span class="n">reset_timestamp</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span>
+            <span class="n">mktime</span><span class="p">(</span><span class="n">gmtime</span><span class="p">(</span><span class="n">reset_timestamp</span><span class="p">)))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_calls_left</span> <span class="o">=</span> \
+            <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ratelimit-remaining&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_quota_reset_at</span> <span class="o">=</span> <span class="n">reset_timestamp</span>
+
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="k">if</span> <span class="n">return_json</span> <span class="k">else</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="DOClient.get_domain"><a class="viewcode-back" href="../client.html#client.DOClient.get_domain">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_domain</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get information for a particular domain managed through</span>
+<span class="sd">        DigitalOcean&#39;s DNS interface.</span>
+
+<span class="sd">        :param name: Domain name</span>
+<span class="sd">        :type  name: basestring</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Domain</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DOClient.delete_domain"><a class="viewcode-back" href="../client.html#client.DOClient.delete_domain">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">delete_domain</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a domain mapping managed through DigitalOcean&#39;s DNS</span>
+<span class="sd">        interface.</span>
+
+<span class="sd">        :param name: Domain name</span>
+<span class="sd">        :type  name: basestring</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Domain</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DOClient.create_domain"><a class="viewcode-back" href="../client.html#client.DOClient.create_domain">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">create_domain</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">ip_address</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method to create domain name mapping for domains</span>
+<span class="sd">        managed through DigitalOcean&#39;s DNS interface.</span>
+
+<span class="sd">        :param name: Domain name</span>
+<span class="sd">        :type  name: basestring</span>
+<span class="sd">        :param ip_address: IP address to map domain name to.</span>
+<span class="sd">        :type ip_address: basestring</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">),</span> \
+                <span class="s2">&quot;name needs to be a valid domain name string&quot;</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ip_address</span><span class="p">,</span> <span class="n">basestring</span><span class="p">),</span> \
+                <span class="s2">&quot;ip_address needs to be a valid IPV4/IPV6 address&quot;</span>
+            <span class="n">domain</span> <span class="o">=</span> <span class="n">Domain</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">ip_address</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Domain mapping created successfully&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">domain</span><span class="o">.</span><span class="n">as_json</span><span class="p">()</span>
+            <span class="p">}</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidArgumentError</span><span class="p">(</span><span class="n">error</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DOClient.get_domains"><a class="viewcode-back" href="../client.html#client.DOClient.get_domains">[docs]</a>    <span class="k">def</span> <span class="nf">get_domains</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all domain maps generated through DigitalOcean&#39;s DNS.</span>
+
+<span class="sd">        :rtype: list (:class: `Domain &lt;doclient.meta.Domain&gt;` )</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Domain</span><span class="o">.</span><span class="n">get_all</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DOClient.get_images"><a class="viewcode-back" href="../client.html#client.DOClient.get_images">[docs]</a>    <span class="k">def</span> <span class="nf">get_images</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get list of images available in your DigitalOcean account.</span>
+
+<span class="sd">        :raises: APIAuthError</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">images_url</span><span class="p">)</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;images&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">Image</span><span class="p">(</span><span class="o">**</span><span class="n">image</span><span class="p">)</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DOClient.get_sizes"><a class="viewcode-back" href="../client.html#client.DOClient.get_sizes">[docs]</a>    <span class="k">def</span> <span class="nf">get_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get list of image sizes available.</span>
+
+<span class="sd">        :raises: APIAuthError</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes_url</span><span class="p">)</span>
+        <span class="n">sizes</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sizes&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">DropletSize</span><span class="p">(</span><span class="o">**</span><span class="n">size</span><span class="p">)</span> <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DOClient.get_droplets"><a class="viewcode-back" href="../client.html#client.DOClient.get_droplets">[docs]</a>    <span class="k">def</span> <span class="nf">get_droplets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get list of droplets for the requested account.</span>
+
+<span class="sd">        :raises: APIAuthError</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">droplet_url</span><span class="p">)</span>
+
+        <span class="n">droplets</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;droplets&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">_droplets</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">droplet</span> <span class="ow">in</span> <span class="n">droplets</span><span class="p">:</span>
+
+            <span class="n">droplet_networks</span> <span class="o">=</span> <span class="n">droplet</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;networks&quot;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">v4_networks</span> <span class="o">=</span> <span class="n">droplet_networks</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;v4&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">v6_networks</span> <span class="o">=</span> <span class="n">droplet_networks</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;v6&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">droplet_network_objects</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">droplet_ipv4_ip</span><span class="p">,</span> <span class="n">droplet_ipv6_ip</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">v4_network</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">v4_networks</span><span class="p">):</span>
+                <span class="n">ip</span> <span class="o">=</span> <span class="n">v4_network</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ip_address&quot;</span><span class="p">)</span>
+                <span class="n">netmask</span> <span class="o">=</span> <span class="n">v4_network</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;netmask&quot;</span><span class="p">)</span>
+                <span class="n">gateway</span> <span class="o">=</span> <span class="n">v4_network</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gateway&quot;</span><span class="p">)</span>
+                <span class="n">is_public</span> <span class="o">=</span> <span class="n">v4_network</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;public&quot;</span>
+                <span class="n">network_type</span> <span class="o">=</span> <span class="s2">&quot;ipv4&quot;</span>
+                <span class="n">network</span> <span class="o">=</span> <span class="n">DropletNetwork</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+                    <span class="s2">&quot;ip_address&quot;</span><span class="p">:</span> <span class="n">ip</span><span class="p">,</span>
+                    <span class="s2">&quot;netmask&quot;</span><span class="p">:</span> <span class="n">netmask</span><span class="p">,</span>
+                    <span class="s2">&quot;gateway&quot;</span><span class="p">:</span> <span class="n">gateway</span><span class="p">,</span>
+                    <span class="s2">&quot;is_public&quot;</span><span class="p">:</span> <span class="n">is_public</span><span class="p">,</span>
+                    <span class="s2">&quot;network_type&quot;</span><span class="p">:</span> <span class="n">network_type</span>
+                <span class="p">})</span>
+                <span class="n">droplet_network_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">is_public</span><span class="p">:</span>
+                    <span class="n">droplet_ipv4_ip</span> <span class="o">=</span> <span class="n">ip</span>
+
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">v6_network</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">v6_networks</span><span class="p">):</span>
+                <span class="n">ip</span> <span class="o">=</span> <span class="n">v6_network</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ip_address&quot;</span><span class="p">)</span>
+                <span class="n">netmask</span> <span class="o">=</span> <span class="n">v6_network</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;netmask&quot;</span><span class="p">)</span>
+                <span class="n">gateway</span> <span class="o">=</span> <span class="n">v6_network</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gateway&quot;</span><span class="p">)</span>
+                <span class="n">is_public</span> <span class="o">=</span> <span class="n">v6_network</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;public&quot;</span>
+                <span class="n">network_type</span> <span class="o">=</span> <span class="s2">&quot;ipv6&quot;</span>
+                <span class="n">network</span> <span class="o">=</span> <span class="n">DropletNetwork</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+                    <span class="s2">&quot;ip_address&quot;</span><span class="p">:</span> <span class="n">ip</span><span class="p">,</span>
+                    <span class="s2">&quot;netmask&quot;</span><span class="p">:</span> <span class="n">netmask</span><span class="p">,</span>
+                    <span class="s2">&quot;gateway&quot;</span><span class="p">:</span> <span class="n">gateway</span><span class="p">,</span>
+                    <span class="s2">&quot;is_public&quot;</span><span class="p">:</span> <span class="n">is_public</span><span class="p">,</span>
+                    <span class="s2">&quot;network_type&quot;</span><span class="p">:</span> <span class="n">network_type</span>
+                <span class="p">})</span>
+                <span class="n">droplet_network_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">is_public</span><span class="p">:</span>
+                    <span class="n">droplet_ipv6_ip</span> <span class="o">=</span> <span class="n">ip</span>
+
+            <span class="n">droplet</span> <span class="o">=</span> <span class="n">Droplet</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">droplet</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;_id&quot;</span><span class="p">:</span> <span class="n">droplet</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;client&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span>
+                <span class="s2">&quot;networks&quot;</span><span class="p">:</span> <span class="n">droplet_network_objects</span><span class="p">,</span>
+                <span class="s2">&quot;ipv4_ip&quot;</span><span class="p">:</span> <span class="n">droplet_ipv4_ip</span><span class="p">,</span>
+                <span class="s2">&quot;ipv6_ip&quot;</span><span class="p">:</span> <span class="n">droplet_ipv6_ip</span>
+            <span class="p">})</span>
+            <span class="n">_droplets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">droplet</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">droplets</span> <span class="o">=</span> <span class="n">_droplets</span></div>
+
+<div class="viewcode-block" id="DOClient.poweroff_droplet"><a class="viewcode-back" href="../client.html#client.DOClient.poweroff_droplet">[docs]</a>    <span class="k">def</span> <span class="nf">poweroff_droplet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instance power off helper method.</span>
+
+<span class="sd">        :param instance_id: ID of the instance to turn off.</span>
+<span class="sd">        :type  instance_id: int, basestring&lt;int&gt;</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_onoff_url</span> <span class="o">%</span> <span class="n">instance_id</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span>
+                             <span class="n">method</span><span class="o">=</span><span class="s2">&quot;post&quot;</span><span class="p">,</span>
+                             <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">poweroff_data</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Initiated droplet poweroff&quot;</span><span class="p">}</span>
+        <span class="k">except</span> <span class="n">APIAuthError</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="p">}</span></div>
+
+<div class="viewcode-block" id="DOClient.poweron_droplet"><a class="viewcode-back" href="../client.html#client.DOClient.poweron_droplet">[docs]</a>    <span class="k">def</span> <span class="nf">poweron_droplet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instance power on helper method.</span>
+
+<span class="sd">        :param instance_id: ID of the instance to turn on.</span>
+<span class="sd">        :type  instance_id: int, basestring&lt;int&gt;</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_onoff_url</span> <span class="o">%</span> <span class="n">instance_id</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span>
+                             <span class="n">method</span><span class="o">=</span><span class="s2">&quot;post&quot;</span><span class="p">,</span>
+                             <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">poweron_data</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Initiated droplet poweron&quot;</span><span class="p">}</span>
+        <span class="k">except</span> <span class="n">APIAuthError</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="p">}</span></div>
+
+<div class="viewcode-block" id="DOClient.powercycle_droplet"><a class="viewcode-back" href="../client.html#client.DOClient.powercycle_droplet">[docs]</a>    <span class="k">def</span> <span class="nf">powercycle_droplet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance_id</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instance power cycle helper method.</span>
+
+<span class="sd">        :param instance_id: ID of the instance to powercycle.</span>
+<span class="sd">        :type  instance_id: int, basestring&lt;int&gt;</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">power_onoff_url</span> <span class="o">%</span> <span class="n">instance_id</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span>
+                             <span class="n">method</span><span class="o">=</span><span class="s2">&quot;post&quot;</span><span class="p">,</span>
+                             <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">powercycle_data</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Initiated droplet power cycle&quot;</span><span class="p">}</span>
+        <span class="k">except</span> <span class="n">APIAuthError</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="p">}</span></div>
+
+<div class="viewcode-block" id="DOClient.get_droplet"><a class="viewcode-back" href="../client.html#client.DOClient.get_droplet">[docs]</a>    <span class="k">def</span> <span class="nf">get_droplet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">droplet_id</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Basic droplet find helper.</span>
+<span class="sd">        Filters out droplets which match the provided droplet id.</span>
+<span class="sd">        [Essentially one droplet].</span>
+
+<span class="sd">        :param droplet_id: ID to match droplets against.</span>
+<span class="sd">        :type  droplet_id: int, basestring</span>
+<span class="sd">        :rtype: list&lt;Droplet&gt;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">droplet_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">droplet_id</span> <span class="o">=</span> <span class="n">droplet_id</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">droplet_id</span> <span class="o">=</span> <span class="n">literal_eval</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">droplet_id</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="n">droplet_id</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">droplet_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidArgumentError</span><span class="p">(</span>
+                <span class="s2">&quot;Method requires a valid integer droplet id&quot;</span><span class="p">)</span>
+
+        <span class="n">droplet</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">droplets</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">droplet_id</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">droplet</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">droplet</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="DOClient.filter_droplets"><a class="viewcode-back" href="../client.html#client.DOClient.filter_droplets">[docs]</a>    <span class="k">def</span> <span class="nf">filter_droplets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matcher</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Basic droplet filter helper.</span>
+<span class="sd">        Filters out droplets which pass a substring match on the name</span>
+<span class="sd">        for the provided matcher.</span>
+<span class="sd">        Matcher defaults to empty string and returns all instances</span>
+
+<span class="sd">        :param matcher: Token to match droplet names against.</span>
+<span class="sd">        :type  matcher: basestring</span>
+<span class="sd">        :rtype: list&lt;Droplet&gt;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">matcher</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">droplets</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">matcher</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">InvalidArgumentError</span><span class="p">(</span>
+                <span class="s2">&quot;Method requires a string filter token or droplet ID&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">matcher</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">droplets</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">matcher</span><span class="p">]</span>
+
+        <span class="c1"># See if a Droplet ID is passed in (an integer) and filter</span>
+        <span class="c1"># based on ID.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_id</span> <span class="o">=</span> <span class="n">literal_eval</span><span class="p">(</span><span class="n">matcher</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">droplets</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">_id</span><span class="p">]</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="n">matcher</span> <span class="o">=</span> <span class="n">re_compile</span><span class="p">(</span><span class="s2">&quot;.*?</span><span class="si">{0}</span><span class="s2">.*?&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">matcher</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">droplets</span>
+                    <span class="k">if</span> <span class="n">re_match</span><span class="p">(</span><span class="n">matcher</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DOClient.get_droplet_snapshots"><a class="viewcode-back" href="../client.html#client.DOClient.get_droplet_snapshots">[docs]</a>    <span class="k">def</span> <span class="nf">get_droplet_snapshots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">droplet_id</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DigitalOcean APIv2 droplet snapshots helper method.</span>
+<span class="sd">        Returns a list of snapshots created for the requested droplet.</span>
+
+<span class="sd">        :param droplet_id: ID of droplet to get snapshots for.</span>
+<span class="sd">        :type  droplet_id: int</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">droplet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_droplet</span><span class="p">(</span><span class="n">droplet_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">droplet</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidArgumentError</span><span class="p">(</span><span class="s2">&quot;Droplet not found&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">droplet</span><span class="o">.</span><span class="n">get_snapshots</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DOClient.get_droplet_kernels"><a class="viewcode-back" href="../client.html#client.DOClient.get_droplet_kernels">[docs]</a>    <span class="k">def</span> <span class="nf">get_droplet_kernels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">droplet_id</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DigitalOcean APIv2 droplet kernels helper method.</span>
+<span class="sd">        Returns a list of kernels available for the requested droplet.</span>
+
+<span class="sd">        :param droplet_id: ID of droplet to get available kernels for.</span>
+<span class="sd">        :type  droplet_id: int</span>
+<span class="sd">        :rtype: list ( :class:`Kernel &lt;doclient.droplet.Kernel&gt;`)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">droplet_kernels_url</span> <span class="o">%</span> <span class="n">droplet_id</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">kernels</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kernels&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">Kernel</span><span class="p">(</span><span class="o">**</span><span class="n">kernel</span><span class="p">)</span> <span class="k">for</span> <span class="n">kernel</span> <span class="ow">in</span> <span class="n">kernels</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DOClient.delete_droplet"><a class="viewcode-back" href="../client.html#client.DOClient.delete_droplet">[docs]</a>    <span class="k">def</span> <span class="nf">delete_droplet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">droplet_id</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DigitalOcean APIv2 droplet delete method. Deletes a requested droplet.</span>
+
+<span class="sd">        :param droplet_id: ID of droplet to delete.</span>
+<span class="sd">        :type  droplet_id: int</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">droplet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_droplet</span><span class="p">(</span><span class="n">droplet_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">droplet</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidArgumentError</span><span class="p">(</span><span class="s2">&quot;Unknown droplet&quot;</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">droplet_base_url</span><span class="p">,</span> <span class="n">droplet_id</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span>
+                             <span class="n">method</span><span class="o">=</span><span class="s2">&quot;delete&quot;</span><span class="p">,</span>
+                             <span class="n">return_json</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Successfully initiated droplet delete for &quot;</span> \
+                      <span class="s2">&quot;droplet </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">droplet</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">APIAuthError</span><span class="p">,</span> <span class="n">auth_error</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">auth_error</span><span class="o">.</span><span class="n">message</span>
+        <span class="k">except</span> <span class="n">APIError</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;DigitalOcean API error. Please try later&quot;</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">message</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="DOClient.create_droplet"><a class="viewcode-back" href="../client.html#client.DOClient.create_droplet">[docs]</a>    <span class="k">def</span> <span class="nf">create_droplet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">region</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span>
+                       <span class="n">ssh_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backups</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ipv6</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">user_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">private_networking</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DigitalOcean APIv2 droplet create method.</span>
+<span class="sd">        Creates a droplet with requested payload features.</span>
+
+<span class="sd">        :param name: Identifier for createddroplet.</span>
+<span class="sd">        :type  name: basestring</span>
+<span class="sd">        :param region: Region identifier to spawn droplet</span>
+<span class="sd">        :type  region: basestring</span>
+<span class="sd">        :param size: Size of droplet to create. [512mb, 1gb, 2gb, 4gb, 8gb, 16gb, 32gb, 48gb, 64gb]</span>
+<span class="sd">        :type  size: basestring</span>
+<span class="sd">        :param image: Name or slug identifier of base image to use.</span>
+<span class="sd">        :type  image: int, basestring</span>
+<span class="sd">        :param ssh_keys: SSH keys to add to created droplet</span>
+<span class="sd">        :type  ssh_keys: list&lt;basestring&gt;, list&lt;long&gt;</span>
+<span class="sd">        :param backups: Droplet backups enable state parameter</span>
+<span class="sd">        :type  backups: bool</span>
+<span class="sd">        :param ipv6: Droplet IPV6 enable state parameter</span>
+<span class="sd">        :type  ipv6: bool</span>
+<span class="sd">        :param user_data: User data to be added to droplet&#39;s metadata</span>
+<span class="sd">        :type  user_data: basestring</span>
+<span class="sd">        :param private_networking: Droplet private networking enable parameter</span>
+<span class="sd">        :type  private_networking: bool</span>
+
+<span class="sd">        :rtype: :class:`Droplet &lt;doclient.droplet.Droplet&gt;`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">basestring</span><span class="p">),</span> \
+                <span class="s2">&quot;Invalid droplet name. Requires a string name&quot;</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">basestring</span><span class="p">),</span> \
+                <span class="s2">&quot;Invalid droplet region. Requires a string region id&quot;</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">basestring</span><span class="p">),</span> \
+                <span class="s2">&quot;Invalid droplet size. Requires a string size&quot;</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">long</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)),</span> \
+                <span class="s2">&quot;Invalid base image id. Requires a numeric ID or slug&quot;</span>
+            <span class="n">backups</span> <span class="o">=</span> <span class="n">backups</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">backups</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="n">private_networking</span> <span class="o">=</span> <span class="n">private_networking</span> <span class="k">if</span> \
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">private_networking</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="n">ipv6</span> <span class="o">=</span> <span class="n">ipv6</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ipv6</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">user_data</span> <span class="k">if</span> \
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">user_data</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">ssh_keys</span> <span class="o">=</span> <span class="n">ssh_keys</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ssh_keys</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> \
+                <span class="nb">all</span><span class="p">((</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">long</span><span class="p">,</span> <span class="n">basestring</span><span class="p">))</span>
+                     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ssh_keys</span><span class="p">))</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">json_dumps</span><span class="p">({</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="n">region</span><span class="p">,</span>
+                <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+                <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">image</span><span class="p">,</span>
+                <span class="s2">&quot;ssh_keys&quot;</span><span class="p">:</span> <span class="n">ssh_keys</span><span class="p">,</span>
+                <span class="s2">&quot;backups&quot;</span><span class="p">:</span> <span class="n">backups</span><span class="p">,</span>
+                <span class="s2">&quot;private_networking&quot;</span><span class="p">:</span> <span class="n">private_networking</span><span class="p">,</span>
+                <span class="s2">&quot;ipv6&quot;</span><span class="p">:</span> <span class="n">ipv6</span><span class="p">,</span>
+                <span class="s2">&quot;user_data&quot;</span><span class="p">:</span> <span class="n">user_data</span><span class="p">,</span>
+            <span class="p">})</span>
+
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">droplet_base_url</span><span class="p">,</span>
+                <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;POST&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="p">,</span>
+                <span class="s2">&quot;return_json&quot;</span><span class="p">:</span> <span class="kc">False</span>
+            <span class="p">}</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">202</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">APIError</span><span class="p">(</span>
+                    <span class="s2">&quot;Unable to create a droplet with requested data&quot;</span><span class="p">)</span>
+
+            <span class="n">droplet</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;droplet&quot;</span><span class="p">)</span>
+            <span class="n">droplet</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_droplets</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">Droplet</span><span class="p">(</span><span class="o">**</span><span class="n">droplet</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidArgumentError</span><span class="p">(</span><span class="n">err</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DOClient.create_droplets"><a class="viewcode-back" href="../client.html#client.DOClient.create_droplets">[docs]</a>    <span class="k">def</span> <span class="nf">create_droplets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">region</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span>
+                        <span class="n">ssh_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backups</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ipv6</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">user_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">private_networking</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DigitalOcean APIv2 droplet create method.</span>
+<span class="sd">        Creates a list of droplets all with the same requested</span>
+<span class="sd">        payload features.</span>
+
+<span class="sd">        :param names: Identifiers for the droplets to be created.</span>
+<span class="sd">        :type  names: list&lt;basestring&gt;</span>
+<span class="sd">        :param region: Region identifier to spawn droplet</span>
+<span class="sd">        :type  region: basestring</span>
+<span class="sd">        :param size: Size of droplet to create. [512mb, 1gb, 2gb, 4gb, 8gb, 16gb, 32gb, 48gb, 64gb]</span>
+<span class="sd">        :type  size: basestring</span>
+<span class="sd">        :param image: Name or slug identifier of base image to use.</span>
+<span class="sd">        :type  image: int, basestring</span>
+<span class="sd">        :param ssh_keys: SSH keys to add to created droplets</span>
+<span class="sd">        :type  ssh_keys: list&lt;basestring&gt;, list&lt;long&gt;</span>
+<span class="sd">        :param backups: Droplet backups enable state parameter</span>
+<span class="sd">        :type  backups: bool</span>
+<span class="sd">        :param ipv6: Droplet IPV6 enable state parameter</span>
+<span class="sd">        :type  ipv6: bool</span>
+<span class="sd">        :param user_data: User data to be added to droplet&#39;s metadata</span>
+<span class="sd">        :type  user_data: basestring</span>
+<span class="sd">        :param private_networking: Droplet private networking enable parameter</span>
+<span class="sd">        :type  private_networking: bool</span>
+<span class="sd">        :raises: :class:`InvalidArgumentError &lt;doclient.errors.InvalidArgumentError&gt;`</span>
+<span class="sd">        :rtype: :class:`Droplet &lt;doclient.droplet.Droplet&gt;`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span> \
+                <span class="s2">&quot;Invalid droplet name. Requires a list of strings&quot;</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">((</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)),</span> \
+                <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;One or more invalid droplet names.&quot;</span>
+                        <span class="s2">&quot;Requires a string name&quot;</span><span class="p">])</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">basestring</span><span class="p">),</span> \
+                <span class="s2">&quot;Invalid droplet region. Requires a string region id&quot;</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">basestring</span><span class="p">),</span> \
+                <span class="s2">&quot;Invalid droplet size. Requires a string size&quot;</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">long</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)),</span> \
+                <span class="s2">&quot;Invalid base image id. Requires a numeric ID or slug&quot;</span>
+            <span class="n">backups</span> <span class="o">=</span> <span class="n">backups</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">backups</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="n">private_networking</span> <span class="o">=</span> <span class="n">private_networking</span> <span class="k">if</span> \
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">private_networking</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="n">ipv6</span> <span class="o">=</span> <span class="n">ipv6</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ipv6</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">user_data</span> <span class="k">if</span> \
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">user_data</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">ssh_keys</span> <span class="o">=</span> <span class="n">ssh_keys</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ssh_keys</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> \
+                <span class="nb">all</span><span class="p">((</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">long</span><span class="p">,</span> <span class="n">basestring</span><span class="p">))</span>
+                     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ssh_keys</span><span class="p">))</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">json_dumps</span><span class="p">({</span>
+                <span class="s2">&quot;names&quot;</span><span class="p">:</span> <span class="n">names</span><span class="p">,</span>
+                <span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="n">region</span><span class="p">,</span>
+                <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+                <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">image</span><span class="p">,</span>
+                <span class="s2">&quot;ssh_keys&quot;</span><span class="p">:</span> <span class="n">ssh_keys</span><span class="p">,</span>
+                <span class="s2">&quot;backups&quot;</span><span class="p">:</span> <span class="n">backups</span><span class="p">,</span>
+                <span class="s2">&quot;private_networking&quot;</span><span class="p">:</span> <span class="n">private_networking</span><span class="p">,</span>
+                <span class="s2">&quot;ipv6&quot;</span><span class="p">:</span> <span class="n">ipv6</span><span class="p">,</span>
+                <span class="s2">&quot;user_data&quot;</span><span class="p">:</span> <span class="n">user_data</span><span class="p">,</span>
+            <span class="p">})</span>
+
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">droplet_base_url</span><span class="p">,</span>
+                <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;POST&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="p">,</span>
+                <span class="s2">&quot;return_json&quot;</span><span class="p">:</span> <span class="kc">False</span>
+            <span class="p">}</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">202</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">APIError</span><span class="p">(</span>
+                    <span class="s2">&quot;Unable to create a droplet with requested data&quot;</span><span class="p">)</span>
+
+            <span class="n">droplets</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;droplets&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">_droplets</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">droplet</span> <span class="ow">in</span> <span class="n">droplets</span><span class="p">:</span>
+                <span class="n">droplet</span><span class="p">[</span><span class="s2">&quot;client&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+                <span class="n">_droplets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Droplet</span><span class="p">(</span><span class="o">**</span><span class="n">droplet</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_droplets</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">_droplets</span>
+
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidArgumentError</span><span class="p">(</span><span class="n">err</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DOClient.get_regions"><a class="viewcode-back" href="../client.html#client.DOClient.get_regions">[docs]</a>    <span class="k">def</span> <span class="nf">get_regions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DigitalOcean APIv2 region list method. Returns a list of regions available.</span>
+
+<span class="sd">        :TODO: Add way to filter regions with pattern/features.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_request</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">regions_url</span><span class="p">)</span>
+        <span class="n">regions</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;regions&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">region_objects</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+            <span class="n">_region</span> <span class="o">=</span> <span class="n">Region</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">region</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;slug&quot;</span><span class="p">:</span> <span class="n">region</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slug&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">region</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;sizes&quot;</span><span class="p">:</span> <span class="n">region</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sizes&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+                <span class="s2">&quot;available&quot;</span><span class="p">:</span> <span class="n">region</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;available&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="p">})</span>
+            <span class="n">region_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_region</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">region_objects</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Sriram Velamur.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,7 +1,0 @@
-*.py[cod]
-*.swp
-*~
-.idea
-
-dist*
-*egg-info*
