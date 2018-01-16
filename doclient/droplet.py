@@ -173,6 +173,12 @@ class Droplet(BaseObject):
         if response.get("message"):
             raise APIError(response.get("message"))
 
+        # Wait for 30 seconds after resizing to power on the droplet
+        # for usual use. Refer TODO above for the caveat of arbitrary
+        # sleep duration.
+        sleep(30)
+        self.power_on()
+
         return self.client.filter_droplets(self.id)
 
 
