@@ -146,12 +146,17 @@ class Droplet(BaseObject):
                 "Invalid size specified. Required a valid string "
                 "size representation")
         # TODO: Move to meta module as a global.
-        valid_sizes = ("512mb", "1gb", "2gb", "4gb", "8gb", "16gb",
-                       "32gb", "48gb", "64gb")
-        if new_size not in valid_sizes:
-            raise InvalidArgumentError(
-                "Invalid size specified. Size must be an available "
-                "size in {0}".format("".join(valid_sizes)))
+        # 01-17-2018 - The hardcoded list breaks any future changes
+        # to the sizes. Find a way to better cache this information
+        # with minimal API call load.
+        # This change type needs to be incorporated for other meta
+        # information like zones/images too.
+        # valid_sizes = ("512mb", "1gb", "2gb", "4gb", "8gb", "16gb",
+        #                "32gb", "48gb", "64gb")
+        # if new_size not in valid_sizes:
+        #     raise InvalidArgumentError(
+        #         "Invalid size specified. Size must be an available "
+        #         "size in {0}".format("".join(valid_sizes)))
         if not isinstance(disk_resize, bool):
             disk_resize = False
 
