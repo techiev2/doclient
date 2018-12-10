@@ -77,7 +77,7 @@ class Droplet(BaseObject):
         """
         url = self.droplet_neighbours_url.format(self.id)
         response = self.client.api_request(url=url)
-        droplets = response.get("droplets")
+        droplets = response.get("droplets", [])
         return [Droplet(**droplet) for droplet in droplets]
 
     def delete(self):
