@@ -8,7 +8,7 @@ sys.dont_write_bytecode = True
 from json import dumps
 
 
-class BaseObject(object):
+class BaseObject:
 
     """
     BaseObject class for use with doclient objects.
@@ -22,7 +22,7 @@ class BaseObject(object):
         """BaseObject class init"""
         if not self.props:
             self.props = []
-        for name, value in kwargs.iteritems():
+        for name, value in kwargs.items():
             if name in ("id", "token"):
                 name = "_{}".format(name)
             setattr(self, name, value)
@@ -54,7 +54,6 @@ class BaseObject(object):
         try:
             if key == "id":
                 return self._id
-            else:
-                return self.key
+            return self.key
         except RuntimeError:
             return None

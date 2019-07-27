@@ -1,23 +1,23 @@
 #! coding=utf-8
+#pylint: disable=R0904,R0913,W0142,C0413
 """DigitalOcean APIv2 client module"""
 __author__ = "Sriram Velamur<sriram.velamur@gmail.com>"
 __all__ = ("DOClient",)
 
-#pylint: disable=R0904,R0913,W0142
 
 import sys
 sys.dont_write_bytecode = True
 from json import dumps as json_dumps
 from re import compile as re_compile, match as re_match
 from ast import literal_eval
-from datetime import datetime as dt
-from time import mktime, gmtime
+# from datetime import datetime as dt
+# from time import mktime, gmtime
 
 import requests
 
 from .base import BaseObject
 from .droplet import Droplet, Image, DropletSize
-from .meta import Domain, Kernel, Snapshot, \
+from .meta import Domain, Kernel, \
     Region, SSHKey, DropletNetwork
 from .errors import APIAuthError, InvalidArgumentError, \
     APIError, NetworkError
@@ -90,7 +90,7 @@ class DOClient(BaseObject):
         r"""
         DigitalOcean APIv2 client init
         :param token: DigitalOcean API authentication token
-        :type  token: basestring
+        :type  token: str
         """
         super(DOClient, self).__init__(**{"token": token})
         self.droplets = None
@@ -192,9 +192,9 @@ class DOClient(BaseObject):
         DigitalOcean API request helper method.
 
         :param url: REST API url to place a HTTP request to.
-        :type  url: basestring
+        :type  url: str
         :param method: HTTP method
-        :type  method: basestring
+        :type  method: str
         :param data: HTTP payload (JSON dumpable)
         :type  data: dict
         :param return_json: Specifies return data format.
@@ -238,20 +238,24 @@ class DOClient(BaseObject):
         if response.status_code == 400:
             raise APIError("Invalid request data. Please check data")
 
-        elif response.status_code in (401, 403):
+        if response.status_code in (401, 403):
             raise APIAuthError(
-                "Invalid authorization bearer. Please check token")
-        elif response.status_code == 500:
+                "Invalid authorization bearer. Please check token"
+            )
+        if response.status_code == 500:
             raise APIError("DigitalOcean API error. Please try later")
 
-        reset_timestamp = response.headers.get("ratelimit-reset")
-        reset_timestamp = float(reset_timestamp)
-        reset_timestamp = dt.fromtimestamp(
-            mktime(gmtime(reset_timestamp)))
+        # Tuesday 23 July 2019 11:44:38 AM IST
+        # Breaking since the ratelimit-reset key is missing in the
+        # headers!
+        # reset_timestamp = response.headers.get("ratelimit-reset")
+        # reset_timestamp = float(reset_timestamp)
+        # reset_timestamp = dt.fromtimestamp(
+        #     mktime(gmtime(reset_timestamp)))
 
-        self.api_calls_left = \
-            response.headers.get("ratelimit-remaining")
-        self.api_quota_reset_at = reset_timestamp
+        # self.api_calls_left = \
+        #     response.headers.get("ratelimit-remaining")
+        # self.api_quota_reset_at = reset_timestamp
 
         return response.json() if return_json else response
 
@@ -262,7 +266,7 @@ class DOClient(BaseObject):
         DigitalOcean's DNS interface.
 
         :param name: Domain name
-        :type  name: basestring
+        :type  name: str
         :rtype: dict
         """
         return Domain.get(name)
@@ -274,7 +278,7 @@ class DOClient(BaseObject):
         interface.
 
         :param name: Domain name
-        :type  name: basestring
+        :type  name: str
         :rtype: dict
         """
         return Domain.delete(name)
@@ -286,22 +290,22 @@ class DOClient(BaseObject):
         managed through DigitalOcean's DNS interface.
 
         :param name: Domain name
-        :type  name: basestring
+        :type  name: str
         :param ip_address: IP address to map domain name to.
-        :type ip_address: basestring
+        :type ip_address: str
         :rtype: dict
         """
         try:
-            assert isinstance(name, basestring), \
+            assert isinstance(name, str), \
                 "name needs to be a valid domain name string"
-            assert isinstance(ip_address, basestring), \
+            assert isinstance(ip_address, str), \
                 "ip_address needs to be a valid IPV4/IPV6 address"
             domain = Domain.create(name, ip_address)
             return {
                 "message": "Domain mapping created successfully",
                 "data": domain.as_json()
             }
-        except AssertionError, error:
+        except AssertionError as error:
             raise InvalidArgumentError(error)
 
     def get_domains(self):
@@ -403,7 +407,7 @@ class DOClient(BaseObject):
         Instance power off helper method.
 
         :param instance_id: ID of the instance to turn off.
-        :type  instance_id: int, basestring<int>
+        :type  instance_id: int, str<int>
         :rtype: dict
         """
         url = self.power_onoff_url % instance_id
@@ -412,7 +416,7 @@ class DOClient(BaseObject):
                              method="post",
                              data=self.poweroff_data)
             return {"message": "Initiated droplet poweroff"}
-        except APIAuthError, error:
+        except APIAuthError as error:
             return {"message": error.message}
 
     def poweron_droplet(self, instance_id):
@@ -420,7 +424,7 @@ class DOClient(BaseObject):
         Instance power on helper method.
 
         :param instance_id: ID of the instance to turn on.
-        :type  instance_id: int, basestring<int>
+        :type  instance_id: int, str<int>
         :rtype: dict
         """
         url = self.power_onoff_url % instance_id
@@ -429,7 +433,7 @@ class DOClient(BaseObject):
                              method="post",
                              data=self.poweron_data)
             return {"message": "Initiated droplet poweron"}
-        except APIAuthError, error:
+        except APIAuthError as error:
             return {"message": error.message}
 
     def powercycle_droplet(self, instance_id):
@@ -437,7 +441,7 @@ class DOClient(BaseObject):
         Instance power cycle helper method.
 
         :param instance_id: ID of the instance to powercycle.
-        :type  instance_id: int, basestring<int>
+        :type  instance_id: int, str<int>
         :rtype: dict
         """
         url = self.power_onoff_url % instance_id
@@ -446,7 +450,7 @@ class DOClient(BaseObject):
                              method="post",
                              data=self.powercycle_data)
             return {"message": "Initiated droplet power cycle"}
-        except APIAuthError, error:
+        except APIAuthError as error:
             return {"message": error.message}
 
     def get_droplet(self, droplet_id):
@@ -456,7 +460,7 @@ class DOClient(BaseObject):
         [Essentially one droplet].
 
         :param droplet_id: ID to match droplets against.
-        :type  droplet_id: int, basestring
+        :type  droplet_id: int, str
         :rtype: list<Droplet>
         """
 
@@ -482,13 +486,13 @@ class DOClient(BaseObject):
         Matcher defaults to empty string and returns all instances
 
         :param matcher: Token to match droplet names against.
-        :type  matcher: basestring
+        :type  matcher: str
         :rtype: list<Droplet>
         """
         if matcher is None:
             return self.droplets
 
-        if not isinstance(matcher, (int, basestring)):
+        if not isinstance(matcher, (int, str)):
             raise InvalidArgumentError(
                 "Method requires a string filter token or droplet ID")
 
@@ -551,7 +555,7 @@ class DOClient(BaseObject):
                              return_json=False)
             message = "Successfully initiated droplet delete for " \
                       "droplet {0}".format(droplet)
-        except APIAuthError, auth_error:
+        except APIAuthError as auth_error:
             message = auth_error.message
         except APIError:
             message = "DigitalOcean API error. Please try later"
@@ -568,43 +572,43 @@ class DOClient(BaseObject):
         Creates a droplet with requested payload features.
 
         :param name: Identifier for createddroplet.
-        :type  name: basestring
+        :type  name: str
         :param region: Region identifier to spawn droplet
-        :type  region: basestring
+        :type  region: str
         :param size: Size of droplet to create. [512mb, 1gb, 2gb, 4gb, 8gb, 16gb, 32gb, 48gb, 64gb]
-        :type  size: basestring
+        :type  size: str
         :param image: Name or slug identifier of base image to use.
-        :type  image: int, basestring
+        :type  image: int, str
         :param ssh_keys: SSH keys to add to created droplet
-        :type  ssh_keys: list<basestring>, list<long>
+        :type  ssh_keys: list<str>, list<int>
         :param backups: Droplet backups enable state parameter
         :type  backups: bool
         :param ipv6: Droplet IPV6 enable state parameter
         :type  ipv6: bool
         :param user_data: User data to be added to droplet's metadata
-        :type  user_data: basestring
+        :type  user_data: str
         :param private_networking: Droplet private networking enable parameter
         :type  private_networking: bool
 
         :rtype: :class:`Droplet <doclient.droplet.Droplet>`
         """
         try:
-            assert isinstance(name, basestring), \
+            assert isinstance(name, str), \
                 "Invalid droplet name. Requires a string name"
-            assert isinstance(region, basestring), \
+            assert isinstance(region, str), \
                 "Invalid droplet region. Requires a string region id"
-            assert isinstance(size, basestring), \
+            assert isinstance(size, str), \
                 "Invalid droplet size. Requires a string size"
-            assert isinstance(image, (int, long, basestring)), \
+            assert isinstance(image, (int, str)), \
                 "Invalid base image id. Requires a numeric ID or slug"
             backups = backups if isinstance(backups, bool) else False
             private_networking = private_networking if \
                 isinstance(private_networking, bool) else False
             ipv6 = ipv6 if isinstance(ipv6, bool) else False
             user_data = user_data if \
-                isinstance(user_data, basestring) else None
+                isinstance(user_data, str) else None
             ssh_keys = ssh_keys if isinstance(ssh_keys, list) and \
-                all((isinstance(x, (int, long, basestring))
+                all((isinstance(x, (int, str))
                      for x in ssh_keys)) else False
             payload = json_dumps({
                 "name": name,
@@ -636,7 +640,7 @@ class DOClient(BaseObject):
             self.get_droplets()
             return Droplet(**droplet)
 
-        except AssertionError, err:
+        except AssertionError as err:
             raise InvalidArgumentError(err)
 
     def create_droplets(self, names, region, size, image,
@@ -648,21 +652,21 @@ class DOClient(BaseObject):
         payload features.
 
         :param names: Identifiers for the droplets to be created.
-        :type  names: list<basestring>
+        :type  names: list<str>
         :param region: Region identifier to spawn droplet
-        :type  region: basestring
+        :type  region: str
         :param size: Size of droplet to create. [512mb, 1gb, 2gb, 4gb, 8gb, 16gb, 32gb, 48gb, 64gb]
-        :type  size: basestring
+        :type  size: str
         :param image: Name or slug identifier of base image to use.
-        :type  image: int, basestring
+        :type  image: int, str
         :param ssh_keys: SSH keys to add to created droplets
-        :type  ssh_keys: list<basestring>, list<long>
+        :type  ssh_keys: list<str>, list<int>
         :param backups: Droplet backups enable state parameter
         :type  backups: bool
         :param ipv6: Droplet IPV6 enable state parameter
         :type  ipv6: bool
         :param user_data: User data to be added to droplet's metadata
-        :type  user_data: basestring
+        :type  user_data: str
         :param private_networking: Droplet private networking enable parameter
         :type  private_networking: bool
         :raises: :class:`InvalidArgumentError <doclient.errors.InvalidArgumentError>`
@@ -671,23 +675,25 @@ class DOClient(BaseObject):
         try:
             assert isinstance(names, list), \
                 "Invalid droplet name. Requires a list of strings"
-            assert all((isinstance(x, basestring) for x in names)), \
-                "".join(["One or more invalid droplet names."
-                        "Requires a string name"])
-            assert isinstance(region, basestring), \
+            assert all((isinstance(x, str) for x in names)), \
+                "".join([
+                    "One or more invalid droplet names.",
+                    "Requires a string name"
+                ])
+            assert isinstance(region, str), \
                 "Invalid droplet region. Requires a string region id"
-            assert isinstance(size, basestring), \
+            assert isinstance(size, str), \
                 "Invalid droplet size. Requires a string size"
-            assert isinstance(image, (int, long, basestring)), \
+            assert isinstance(image, (int, str)), \
                 "Invalid base image id. Requires a numeric ID or slug"
             backups = backups if isinstance(backups, bool) else False
             private_networking = private_networking if \
                 isinstance(private_networking, bool) else False
             ipv6 = ipv6 if isinstance(ipv6, bool) else False
             user_data = user_data if \
-                isinstance(user_data, basestring) else None
+                isinstance(user_data, str) else None
             ssh_keys = ssh_keys if isinstance(ssh_keys, list) and \
-                all((isinstance(x, (int, long, basestring))
+                all((isinstance(x, (int, str))
                      for x in ssh_keys)) else False
             payload = json_dumps({
                 "names": names,
@@ -723,7 +729,7 @@ class DOClient(BaseObject):
             self.get_droplets()
             return _droplets
 
-        except AssertionError, err:
+        except AssertionError as err:
             raise InvalidArgumentError(err)
 
     def get_regions(self):

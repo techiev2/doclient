@@ -4,7 +4,8 @@ from setuptools import setup
 
 setup(
     name='do-client',
-    version='1.0.6',
+    version='1.0.7',
+    python_requires='>3.5.2',
     description='DigitalOcean REST API python client',
     author='Sriram Velamur',
     author_email='sriram.velamur@gmail.com',
