@@ -24,6 +24,7 @@ class BaseError(BaseException):
         prefix = getattr(self, "prefix", "GeneralError")
         message = "DOClient::{0} {1}: ".format(prefix, message)
         args = (message,)
+        self.message = message
         super(BaseError, self).__init__(*args, **kwargs)
 
 

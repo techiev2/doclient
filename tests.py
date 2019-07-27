@@ -4,11 +4,13 @@ import sys
 sys.dont_write_bytecode = True
 from os import environ
 import unittest
-from types import NoneType
 
 from doclient import DOClient, Droplet
 from doclient.errors import InvalidArgumentError, APIAuthError, APIError
 from doclient.meta import Domain, Snapshot
+
+
+NoneType = type(None)
 
 
 class DOClientTest(unittest.TestCase):
@@ -59,7 +61,7 @@ class DOClientTest(unittest.TestCase):
                 self.assertTrue(all_domains)
                 del_response = self.client.delete_domain(name)
                 self.assertIsInstance(del_response, dict)
-            except BaseException, error:
+            except BaseException as error:
                 self.assertIsInstance(error,
                     (APIAuthError, APIError, InvalidArgumentError))
 

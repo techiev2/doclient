@@ -20,32 +20,29 @@ from .errors import InvalidArgumentError, APIError
 class Droplet(BaseObject):
     r"""DigitalOcean droplet object"""
 
-    __slots__ = ("client", "name", "ipv4_ip", "ipv6_ip", "networks")
-
     client, name, ipv4_ip, ipv6_ip = (None,) * 4
     networks = []
 
     droplet_base_url = 'https://api.digitalocean.com/v2/droplets/'
-    droplet_snapshot_url = \
-        '{droplet_base_url}/snapshots?page=1&per_page=100'.format(
-        **locals())
-    droplet_neighbours_url = \
-        '{droplet_base_url}/neighbors'.format(**locals())
+    droplet_snapshot_url = '{}/snapshots?page=1&per_page=100'.format(
+        droplet_base_url
+    )
+    droplet_neighbours_url = '{}/neighbors'.format(droplet_base_url)
     droplet_actions_url = "{0}{1}/actions"
 
     def power_off(self):
         """Droplet power off helper method"""
-        print "Powering off droplet {0}".format(self.name)
+        print("Powering off droplet {0}".format(self.name))
         self.client.poweroff_droplet(self.id)
 
     def power_on(self):
         """Droplet power on helper method"""
-        print "Powering on droplet {0}".format(self.name)
+        print("Powering on droplet {0}".format(self.name))
         self.client.poweron_droplet(self.id)
 
     def power_cycle(self):
         """Droplet power cycle helper method"""
-        print "Power cycling droplet {0}".format(self.name)
+        print("Power cycling droplet {0}".format(self.name))
         self.client.powercycle_droplet(self.id)
 
     def __repr__(self):
@@ -107,8 +104,9 @@ class Droplet(BaseObject):
         """
         url = self.droplet_actions_url.format(
             self.droplet_base_url, self.id)
-        print "Attempting to reset password for droplet {0}".format(
-            self.id)
+        print("Attempting to reset password for droplet {0}".format(
+            self.id
+        ))
         payload = {
             "type": "password_reset"
         }
@@ -119,7 +117,7 @@ class Droplet(BaseObject):
         Digitalocean droplet resize helper method
 
         :param new_size: New droplet size to be resized to.
-        :type  new_size: basestring
+        :type  new_size: str
         :param disk_resize: Boolean to indicate disk resizing.
         :type  disk_resize: bool
         :return: Resized current droplet object.
@@ -128,11 +126,11 @@ class Droplet(BaseObject):
         """
         url = self.droplet_actions_url.format(
             self.droplet_base_url, self.id)
-        print "".join([
+        print("".join([
             "Droplet {0} needs to be powered off before resize.",
             " Caveat emptor: Please power on the droplet",
             " via the Digitalocean console or the API after "
-            "resizing."]).format(self.id)
+            "resizing."]).format(self.id))
         self.power_off()
         # Wait for 30 seconds to allow for the droplet to power off
         # before inititalizing the resizing. This, and the sleep after
@@ -141,7 +139,7 @@ class Droplet(BaseObject):
         # use event triggers/similar to initialize further changes.
         sleep(30)
 
-        if not isinstance(new_size, basestring):
+        if not isinstance(new_size, str):
             raise InvalidArgumentError(
                 "Invalid size specified. Required a valid string "
                 "size representation")

@@ -61,12 +61,12 @@ class Domain(BaseObject):
         status = response.status_code
         if status in (401, 403):
             raise APIAuthError("Invalid authentication bearer")
-        elif status == 400:
+        if status == 400:
             raise InvalidArgumentError("Invalid payload data")
-        elif status == 500:
+        if status == 500:
             raise APIError(
                 "DigitalOcean API error. Please try later.")
-        elif status != 201:
+        if status != 201:
             message = response.json().get("message")
             raise InvalidArgumentError(message)
 
@@ -81,12 +81,12 @@ class Domain(BaseObject):
         status = response.status_code
         if status in (401, 403):
             raise APIAuthError("Invalid authentication bearer")
-        elif status == 400:
+        if status == 400:
             raise InvalidArgumentError("Invalid payload data")
-        elif status == 500:
+        if status == 500:
             raise APIError(
                 "DigitalOcean API error. Please try later.")
-        elif status != 200:
+        if status != 200:
             message = response.json().get("message")
             raise InvalidArgumentError(message)
 
@@ -104,12 +104,12 @@ class Domain(BaseObject):
         status = response.status_code
         if status in (401, 403):
             raise APIAuthError("Invalid authentication bearer")
-        elif status == 400:
+        if status == 400:
             raise InvalidArgumentError("Invalid payload data")
-        elif status == 500:
+        if status == 500:
             raise APIError(
                 "DigitalOcean API error. Please try later.")
-        elif status != 200:
+        if status != 200:
             message = response.json().get("message")
             raise InvalidArgumentError(message)
         domains = response.json().get("domains", [])
@@ -130,12 +130,12 @@ class Domain(BaseObject):
         status = response.status_code
         if status in (401, 403):
             raise APIAuthError("Invalid authentication bearer")
-        elif status == 400:
+        if status == 400:
             raise InvalidArgumentError("Invalid payload data")
-        elif status == 500:
+        if status == 500:
             raise APIError(
                 "DigitalOcean API error. Please try later.")
-        elif status != 204:
+        if status != 204:
             message = response.json().get("message")
             raise InvalidArgumentError(message)
 
@@ -219,4 +219,3 @@ class DropletNetwork(BaseObject):
 
     network_type, netmask, ip_address,\
         gateway, is_public = (None,) * 5
-
